@@ -1,511 +1,529 @@
 {
-  "info": {
-    "name": "Helpdesk Ticketing API",
-    "description": "Collection untuk testing Helpdesk Ticketing API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "Health",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/api/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "health"]
-        }
-      }
-    },
-    {
-      "name": "Users",
-      "item": [
-        {
-          "name": "Get All Users",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            }
-          }
-        },
-        {
-          "name": "Get User By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/user-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "user-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+628123456789\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/user-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "user-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Delete User",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/user-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "user-id-here"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Tickets",
-      "item": [
-        {
-          "name": "Get All Tickets",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets?page=1&limit=10&status=OPEN&priority=HIGH&categoryId=&assigneeId=&creatorId=",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                },
-                {
-                  "key": "status",
-                  "value": "OPEN",
-                  "disabled": true
-                },
-                {
-                  "key": "priority",
-                  "value": "HIGH",
-                  "disabled": true
-                },
-                {
-                  "key": "categoryId",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "assigneeId",
-                  "value": "",
-                  "disabled": true
-                },
-                {
-                  "key": "creatorId",
-                  "value": "",
-                  "disabled": true
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Get Ticket Stats",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "stats"]
-            }
-          }
-        },
-        {
-          "name": "Get Ticket By ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Create Ticket",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"API Error on Dashboard\",\n  \"description\": \"Getting 500 error when loading dashboard\",\n  \"priority\": \"HIGH\",\n  \"categoryId\": \"category-id-here\",\n  \"creatorId\": \"user-id-here\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets"]
-            }
-          }
-        },
-        {
-          "name": "Update Ticket",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"API Error on Dashboard - Updated\",\n  \"description\": \"Getting 500 error when loading dashboard - still investigating\",\n  \"priority\": \"MEDIUM\",\n  \"categoryId\": \"category-id-here\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Update Ticket Status",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"changedById\": \"user-id-here\",\n  \"note\": \"Started working on this issue\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "status"]
-            }
-          }
-        },
-        {
-          "name": "Assign Ticket",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"assigneeId\": \"assignee-user-id\",\n  \"changedById\": \"user-id-here\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/assign",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "assign"]
-            }
-          }
-        },
-        {
-          "name": "Delete Ticket",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Comments",
-      "item": [
-        {
-          "name": "Get Ticket Comments",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "comments"]
-            }
-          }
-        },
-        {
-          "name": "Create Comment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"authorId\": \"user-id-here\",\n  \"body\": \"We are investigating this issue. Updates coming soon.\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "comments"]
-            }
-          }
-        },
-        {
-          "name": "Update Comment",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"body\": \"Issue has been resolved. Testing in progress.\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments/comment-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "comments", "comment-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Delete Comment",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments/comment-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "comments", "comment-id-here"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Attachments",
-      "item": [
-        {
-          "name": "Get Ticket Attachments",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/attachments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "attachments"]
-            }
-          }
-        },
-        {
-          "name": "Delete Attachment",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/attachments/attachment-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "attachments", "attachment-id-here"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Notifications",
-      "item": [
-        {
-          "name": "Get User Notifications",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications?userId=user-id-here&unread=false",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "notifications"],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "user-id-here"
-                },
-                {
-                  "key": "unread",
-                  "value": "false",
-                  "disabled": true
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Mark Notification as Read",
-          "request": {
-            "method": "PATCH",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications/notification-id-here/read",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "notifications", "notification-id-here", "read"]
-            }
-          }
-        },
-        {
-          "name": "Mark All Notifications as Read",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"user-id-here\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/notifications/read-all",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "notifications", "read-all"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Categories",
-      "item": [
-        {
-          "name": "Get All Categories",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories"]
-            }
-          }
-        },
-        {
-          "name": "Create Category",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Technical Support\",\n  \"description\": \"Issues related to technical problems\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/categories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories"]
-            }
-          }
-        },
-        {
-          "name": "Update Category",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Technical Support - Updated\",\n  \"description\": \"All technical issues and bugs\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/categories/category-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "category-id-here"]
-            }
-          }
-        },
-        {
-          "name": "Delete Category",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/categories/category-id-here",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "categories", "category-id-here"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Histories",
-      "item": [
-        {
-          "name": "Get Ticket Histories",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/tickets/ticket-id-here/histories",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "tickets", "ticket-id-here", "histories"]
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "localhost:3000",
-      "type": "string"
-    }
-  ]
+	"info": {
+		"name": "Helpdesk Ticketing API",
+		"description": "Collection untuk testing Helpdesk Ticketing API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "health"]
+				}
+			}
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users"]
+						}
+					}
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/user-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "user-id-here"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"phone\": \"+628123456789\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/user-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "user-id-here"]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/user-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "user-id-here"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tickets",
+			"item": [
+				{
+					"name": "Get All Tickets",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets?page=1&limit=10&status=OPEN&priority=HIGH&categoryId=&assigneeId=&creatorId=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "OPEN",
+									"disabled": true
+								},
+								{
+									"key": "priority",
+									"value": "HIGH",
+									"disabled": true
+								},
+								{
+									"key": "categoryId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "assigneeId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "creatorId",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Ticket Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "stats"]
+						}
+					}
+				},
+				{
+					"name": "Get Ticket By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here"]
+						}
+					}
+				},
+				{
+					"name": "Create Ticket",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"API Error on Dashboard\",\n  \"description\": \"Getting 500 error when loading dashboard\",\n  \"priority\": \"HIGH\",\n  \"categoryId\": \"category-id-here\",\n  \"creatorId\": \"user-id-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets"]
+						}
+					}
+				},
+				{
+					"name": "Update Ticket",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"API Error on Dashboard - Updated\",\n  \"description\": \"Getting 500 error when loading dashboard - still investigating\",\n  \"priority\": \"MEDIUM\",\n  \"categoryId\": \"category-id-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here"]
+						}
+					}
+				},
+				{
+					"name": "Update Ticket Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"changedById\": \"user-id-here\",\n  \"note\": \"Started working on this issue\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "status"]
+						}
+					}
+				},
+				{
+					"name": "Assign Ticket",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"assigneeId\": \"assignee-user-id\",\n  \"changedById\": \"user-id-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/assign",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "assign"]
+						}
+					}
+				},
+				{
+					"name": "Delete Ticket",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Comments",
+			"item": [
+				{
+					"name": "Get Ticket Comments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "comments"]
+						}
+					}
+				},
+				{
+					"name": "Create Comment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"authorId\": \"user-id-here\",\n  \"body\": \"We are investigating this issue. Updates coming soon.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "comments"]
+						}
+					}
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"body\": \"Issue has been resolved. Testing in progress.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments/comment-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": [
+								"api",
+								"tickets",
+								"ticket-id-here",
+								"comments",
+								"comment-id-here"
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/comments/comment-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": [
+								"api",
+								"tickets",
+								"ticket-id-here",
+								"comments",
+								"comment-id-here"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Attachments",
+			"item": [
+				{
+					"name": "Get Ticket Attachments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/attachments",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "attachments"]
+						}
+					}
+				},
+				{
+					"name": "Delete Attachment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/attachments/attachment-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": [
+								"api",
+								"tickets",
+								"ticket-id-here",
+								"attachments",
+								"attachment-id-here"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get User Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications?userId=user-id-here&unread=false",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "user-id-here"
+								},
+								{
+									"key": "unread",
+									"value": "false",
+									"disabled": true
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/notification-id-here/read",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "notification-id-here", "read"]
+						}
+					}
+				},
+				{
+					"name": "Mark All Notifications as Read",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"user-id-here\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/notifications/read-all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "notifications", "read-all"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Create Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Technical Support\",\n  \"description\": \"Issues related to technical problems\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Update Category",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Technical Support - Updated\",\n  \"description\": \"All technical issues and bugs\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/category-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "category-id-here"]
+						}
+					}
+				},
+				{
+					"name": "Delete Category",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/category-id-here",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "category-id-here"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Histories",
+			"item": [
+				{
+					"name": "Get Ticket Histories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/tickets/ticket-id-here/histories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tickets", "ticket-id-here", "histories"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "localhost:3000",
+			"type": "string"
+		}
+	]
 }
