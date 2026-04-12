@@ -1,11 +1,43 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
+import type { PrismaClient } from "./generated/prisma/client.js";
+import users from './routes/users.js';
+import tickets from './routes/tickets.js';
+import { attachments, categories, histories, notifications } from './routes/misc.js';
+import comments from './routes/comments.js';
 
-const app = new Hono()
+type ContextWithPrisma = {
+  Variables: {
+    prisma: PrismaClient; 
+  }; 
+}; 
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
+const app = new Hono<ContextWithPrisma>(); 
+
+app.get('api/health', (c) => {
+  return c.text('Hello Hono! Helpdesk API Server Activated')
 })
+
+app.route("api/users",         users);
+app.route("api/tickets",       tickets);
+app.route("api/categories",    categories);
+app.route("api/notifications", notifications);
+
+// Nested routes under /tickets/:ticketId
+app.route("api/tickets/:ticketId/comments",    comments);
+app.route("api/tickets/:ticketId/attachments", attachments);
+app.route("api/tickets/:ticketId/histories",   histories);
+
+// ─────────────────────────────────────────
+// 404 HANDLER
+// ─────────────────────────────────────────
+
+app.notFound((c) => c.json({ error: "Route tidak ditemukan" }, 404));
+
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: "Internal server error", detail: err.message }, 500);
+});
 
 serve({
   fetch: app.fetch,
