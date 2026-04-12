@@ -5,6 +5,8 @@ import users from './routes/users.js';
 import tickets from './routes/tickets.js';
 import { attachments, categories, histories, notifications } from './routes/misc.js';
 import comments from './routes/comments.js';
+import { loggerMiddleware } from './middleware/logger.js';
+import logger from './lib/logger.js';
 
 type ContextWithPrisma = {
   Variables: {
@@ -12,7 +14,10 @@ type ContextWithPrisma = {
   }; 
 }; 
 
-const app = new Hono<ContextWithPrisma>(); 
+const app = new Hono<ContextWithPrisma>();
+
+// Global logger middleware
+app.use('*', loggerMiddleware);
 
 app.get('api/health', (c) => {
   return c.text('Hello Hono! Helpdesk API Server Activated')
@@ -43,5 +48,5 @@ serve({
   fetch: app.fetch,
   port: 3000
 }, (info) => {
-  console.log(`Server is running on http://localhost:${info.port}`)
+  logger.info(`Server is running on http://localhost:${info.port}`)
 })

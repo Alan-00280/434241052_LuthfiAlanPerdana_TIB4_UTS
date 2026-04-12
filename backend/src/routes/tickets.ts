@@ -134,7 +134,6 @@ tickets.post("/", withPrisma, async (c) => {
             fileUrl: file.fileUrl,
             fileSize: file.fileSize,
             mimeType: file.mimeType,
-            // ❌ jangan isi ticketId di sini
           })),
         },
       }),
@@ -142,7 +141,7 @@ tickets.post("/", withPrisma, async (c) => {
     include: {
       creator:  { select: { id: true, fullName: true } },
       category: { select: { id: true, name: true } },
-      attachments: true, // optional tapi biasanya kepake
+      attachments: true,
     },
   });
 
