@@ -57,6 +57,7 @@ enum AttachmentSource {
 
 model User {
   id             String    @id @default(uuid())
+  supabaseUid    String?   @unique
   username       String    @unique
   email          String    @unique
   passwordHash   String

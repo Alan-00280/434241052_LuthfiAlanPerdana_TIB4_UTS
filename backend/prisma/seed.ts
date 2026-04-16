@@ -8,6 +8,7 @@ import {
 	TicketStatus,
 	UserRole,
 } from "../src/generated/prisma/enums.js";
+import { supabase } from "../src/lib/supabase.js";
 
 const adapter = new PrismaPg({
 	connectionString: process.env.DATABASE_URL!,
@@ -21,6 +22,44 @@ async function hashPassword(password: string): Promise<string> {
 	return bcrypt.hash(password, 10);
 }
 
+// Helper: buat user di Supabase Auth lalu upsert ke PostgreSQL
+async function createUser(data: {
+	email: string;
+	password: string;
+	username: string;
+	fullName: string;
+	phone: string;
+	role: UserRole;
+}) {
+	// 1. Buat di Supabase Auth
+	const { data: authData, error } = await supabase.auth.admin.createUser({
+		email: data.email,
+		password: data.password,
+		email_confirm: true, // langsung confirmed, tidak perlu verifikasi email
+	});
+
+	if (error && error.message !== "User already registered") {
+		throw new Error(`Supabase error for ${data.email}: ${error.message}`);
+	}
+
+	const supabaseUid = authData?.user?.id ?? null;
+
+	// 2. Upsert ke PostgreSQL dengan supabaseUid
+	return prisma.user.upsert({
+		where: { email: data.email },
+		update: { supabaseUid },
+		create: {
+			supabaseUid,
+			username: data.username,
+			email: data.email,
+			passwordHash: await hashPassword(data.password),
+			role: data.role,
+			fullName: data.fullName,
+			phone: data.phone,
+		},
+	});
+}
+
 async function main() {
 	console.log("🌱 Starting seed...");
 
@@ -30,82 +69,61 @@ async function main() {
 
 	console.log("👤 Seeding users...");
 
-	const admin = await prisma.user.upsert({
-		where: { email: "admin@helpdesk.com" },
-		update: {},
-		create: {
-			username: "admin",
-			email: "admin@helpdesk.com",
-			passwordHash: await hashPassword("Admin@123"),
-			role: UserRole.ADMIN,
-			fullName: "Administrator",
-			phone: "081200000001",
-		},
+	// 1. Admin
+	const admin = await createUser({
+		email: "admin@helpdesk.com",
+		password: "Admin@123",
+		username: "admin",
+		fullName: "Administrator",
+		phone: "081200000001",
+		role: UserRole.ADMIN,
 	});
 
-	const helpdesk1 = await prisma.user.upsert({
-		where: { email: "helpdesk1@helpdesk.com" },
-		update: {},
-		create: {
-			username: "helpdesk_budi",
-			email: "helpdesk1@helpdesk.com",
-			passwordHash: await hashPassword("Helpdesk@123"),
-			role: UserRole.HELPDESK,
-			fullName: "Budi Santoso",
-			phone: "081200000002",
-		},
+	// 2. Helpdesk
+	const helpdesk1 = await createUser({
+		email: "helpdesk1@helpdesk.com",
+		password: "Helpdesk@123",
+		username: "helpdesk_budi",
+		fullName: "Budi Santoso",
+		phone: "081200000002",
+		role: UserRole.HELPDESK,
 	});
 
-	const helpdesk2 = await prisma.user.upsert({
-		where: { email: "helpdesk2@helpdesk.com" },
-		update: {},
-		create: {
-			username: "helpdesk_sari",
-			email: "helpdesk2@helpdesk.com",
-			passwordHash: await hashPassword("Helpdesk@123"),
-			role: UserRole.HELPDESK,
-			fullName: "Sari Dewi",
-			phone: "081200000003",
-		},
+	const helpdesk2 = await createUser({
+		email: "helpdesk2@helpdesk.com",
+		password: "Helpdesk@123",
+		username: "helpdesk_sari",
+		fullName: "Sari Dewi",
+		phone: "081200000003",
+		role: UserRole.HELPDESK,
 	});
 
-	const user1 = await prisma.user.upsert({
-		where: { email: "user1@example.com" },
-		update: {},
-		create: {
-			username: "andi_pratama",
-			email: "user1@example.com",
-			passwordHash: await hashPassword("User@123"),
-			role: UserRole.USER,
-			fullName: "Andi Pratama",
-			phone: "081300000001",
-		},
+	// 3. Regular Users
+	const user1 = await createUser({
+		email: "user1@example.com",
+		password: "User@123",
+		username: "andi_pratama",
+		fullName: "Andi Pratama",
+		phone: "081300000001",
+		role: UserRole.USER,
 	});
 
-	const user2 = await prisma.user.upsert({
-		where: { email: "user2@example.com" },
-		update: {},
-		create: {
-			username: "rina_kusuma",
-			email: "user2@example.com",
-			passwordHash: await hashPassword("User@123"),
-			role: UserRole.USER,
-			fullName: "Rina Kusuma",
-			phone: "081300000002",
-		},
+	const user2 = await createUser({
+		email: "user2@example.com",
+		password: "User@123",
+		username: "rina_kusuma",
+		fullName: "Rina Kusuma",
+		phone: "081300000002",
+		role: UserRole.USER,
 	});
 
-	const user3 = await prisma.user.upsert({
-		where: { email: "user3@example.com" },
-		update: {},
-		create: {
-			username: "doni_wijaya",
-			email: "user3@example.com",
-			passwordHash: await hashPassword("User@123"),
-			role: UserRole.USER,
-			fullName: "Doni Wijaya",
-			phone: "081300000003",
-		},
+	const user3 = await createUser({
+		email: "user3@example.com",
+		password: "User@123",
+		username: "doni_wijaya",
+		fullName: "Doni Wijaya",
+		phone: "081300000003",
+		role: UserRole.USER,
 	});
 
 	console.log("✅ Users seeded");
