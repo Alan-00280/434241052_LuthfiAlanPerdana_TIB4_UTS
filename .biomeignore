@@ -2,7 +2,6 @@
 **/node_modules/.prisma
 **/dist
 **/.envx
-
-# Mengabaikan folder client dan seluruh isinya
 client/
 client/**
+**/*.md

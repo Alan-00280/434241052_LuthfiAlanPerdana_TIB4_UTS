@@ -6,7 +6,17 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": false,
+		"includes": [
+			"**",
+			"!**/node_modules",
+			"!**/node_modules/.prisma",
+			"!**/dist",
+			"!**/.envx",
+			"!!client/",
+			"!client",
+			"!!**/*.md"
+		]
 	},
 	"formatter": {
 		"enabled": true,
