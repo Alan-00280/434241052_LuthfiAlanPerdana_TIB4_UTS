@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:helpdesk_ticketing/core/utils/api_client.dart';
 import 'package:helpdesk_ticketing/features/auth/data/datasource/supabase_datasource.dart';
 import 'package:helpdesk_ticketing/features/auth/data/repositories/user_repository_impl.dart';
 import 'package:helpdesk_ticketing/features/auth/domain/entities/user_entity.dart';
@@ -7,99 +9,61 @@ import 'package:helpdesk_ticketing/features/auth/domain/repositories/user_reposi
 import 'package:helpdesk_ticketing/features/auth/domain/usecases/user_usecase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AuthToken {
-  final String? accessToken;
-  final String? refreshToken;
-  final DateTime? expiresAt;
-
-  AuthToken({
-    this.accessToken,
-    this.refreshToken,
-    this.expiresAt,
-  });
-
-  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
-  bool get isValid => accessToken != null && !isExpired;
-}
-
-class AuthController extends StateNotifier<AsyncValue<UserEntity?>> {
-  final AuthRepository repo;
-  AuthToken? _currentToken;
-
-  AuthController(this.repo) : super(const AsyncLoading()) {
-    _initializeAuthState();
-  }
-
-  void _initializeAuthState() {
-    checkUser();
-    _listenToAuthStateChanges();
-  }
-
-  void _listenToAuthStateChanges() {
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+final _authSubscriptionProvider =
+    Provider.autoDispose<StreamSubscription<AuthState>>((ref) {
+  final subscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+    (data) {
       final session = data.session;
-      
-      // Update token when auth state changes
-      if (session != null) {
-        _currentToken = AuthToken(
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresAt: session.expiresAt != null 
-        ? DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000) 
-        : null,
-        );
-      } else {
-        _currentToken = null;
-      }
+      ApiClient.instance.setToken(session?.accessToken);
+    },
+  );
+  ref.onDispose(() => subscription.cancel());
+  return subscription;
+});
 
-      // Auto-refresh user state when auth state changes
-      checkUser();
-    });
+class AuthController extends AsyncNotifier<UserEntity?> {
+  AuthRepository get repo => ref.read(authRepositoryProvider);
+
+  @override
+  Future<UserEntity?> build() async {
+    _checkAndSyncToken();
+    ref.watch(_authSubscriptionProvider);
+    return await repo.getCurrentUser();
+  }
+
+  Future<void> _checkAndSyncToken() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      ApiClient.instance.setToken(session.accessToken);
+    }
   }
 
   Future<void> checkUser() async {
-    final user = await repo.getCurrentUser();
-    state = AsyncData(user);
+    ref.invalidateSelf();
   }
 
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
     try {
-      await repo.signIn(email, password);
-      
-      // Get current session and store token
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session != null) {
-        _currentToken = AuthToken(
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-          expiresAt: session.expiresAt != null 
-        ? DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000) 
-        : null,
-        );
-      }
-      
-      await checkUser();
-    } catch (e) {
-      // Keep state as is (don't set to AsyncError) to show snackbar in AuthPage
-      // Reset to previous state or stay as loading
-      state = AsyncData(null);
+      final user = await repo.signIn(email, password);
+      state = AsyncData(user);
+    } catch (e, st) {
+      state = AsyncError(e, st);
       rethrow;
     }
   }
 
   Future<void> logout() async {
     await repo.signOut();
-    _currentToken = null;
     state = const AsyncData(null);
   }
 
-  /// Get current authentication token
-  AuthToken? getAuthToken() => _currentToken;
-
-  /// Get current access token for API requests
-  String? getAccessToken() => _currentToken?.accessToken;
+  /// Ambil access token Supabase yang aktif
+  String? getAccessToken() =>
+      Supabase.instance.client.auth.currentSession?.accessToken;
 }
+
+// ─── Providers ───────────────────────────────────────────────────────────────
 
 final authDataSourceProvider = Provider(
   (ref) => SupabaseAuthDataSource(),
@@ -114,18 +78,18 @@ final signInProvider = Provider(
 );
 
 final authControllerProvider =
-    StateNotifierProvider<AuthController, AsyncValue<UserEntity?>>(
-  (ref) => AuthController(ref.read(authRepositoryProvider)),
+    AsyncNotifierProvider<AuthController, UserEntity?>(
+  AuthController.new,
 );
 
-/// Provider for accessing the current access token for API requests
+/// Provider untuk akses token langsung (untuk kebutuhan khusus)
 final accessTokenProvider = Provider<String?>((ref) {
-  final controller = ref.read(authControllerProvider.notifier);
-  return controller.getAccessToken();
+  final session = Supabase.instance.client.auth.currentSession;
+  return session?.accessToken;
 });
 
-/// Provider for accessing the full auth token
-final authTokenProvider = Provider<AuthToken?>((ref) {
-  final controller = ref.read(authControllerProvider.notifier);
-  return controller.getAuthToken();
+/// Provider untuk akses UserEntity yang sedang login
+final currentUserProvider = Provider<UserEntity?>((ref) {
+  final asyncValue = ref.watch(authControllerProvider);
+  return asyncValue.hasValue ? asyncValue.value : null;
 });

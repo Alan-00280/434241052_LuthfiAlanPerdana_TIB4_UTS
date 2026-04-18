@@ -73,10 +73,27 @@ export const notifications = new Hono<ContextWithPrisma>();
 // GET /notifications?userId= — list notifikasi user (FR-007)
 notifications.get("/", withPrisma, async (c) => {
 	const prisma = c.get("prisma");
-	const userId = c.req.query("userId");
+	let userId = c.req.query("userId");
+	const supaId = c.req.query("supaId");
 	const unreadOnly = c.req.query("unread") === "true";
 
 	if (!userId) return c.json({ error: "userId wajib diisi" }, 400);
+	if (supaId) {
+		const user = await prisma.user.findUnique({
+			where: {
+				supabaseUid: userId,
+			},
+			select: {
+				id: true, // Kita hanya mengambil kolom id saja
+			},
+		});
+
+		if (user) {
+			userId = user.id;
+		} else {
+			return c.json({ error: "User not found. supa id = true" }, 404);
+		}
+	}
 
 	const data = await prisma.notification.findMany({
 		where: {

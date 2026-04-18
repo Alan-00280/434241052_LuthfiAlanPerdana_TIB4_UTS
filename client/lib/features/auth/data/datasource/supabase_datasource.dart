@@ -1,27 +1,28 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAuthDataSource {
-  final client = Supabase.instance.client;
+  final _client = Supabase.instance.client;
 
   Future<User?> getCurrentUser() async {
-    return client.auth.currentUser;
+    return _client.auth.currentUser;
   }
 
-  Future<void> signIn(String email, String password) async {
-    await client.auth.signInWithPassword(
+  /// Login dan kembalikan AuthResponse (berisi session + user)
+  Future<AuthResponse> signIn(String email, String password) async {
+    return _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
   }
 
   Future<void> signUp(String email, String password) async {
-    await client.auth.signUp(
+    await _client.auth.signUp(
       email: email,
       password: password,
     );
   }
 
   Future<void> signOut() async {
-    await client.auth.signOut();
+    await _client.auth.signOut();
   }
 }

@@ -33,7 +33,25 @@ users.get("/", withPrisma, async (c) => {
 // GET /users/:id — detail user
 users.get("/:id", withPrisma, async (c) => {
 	const prisma = c.get("prisma");
-	const { id } = c.req.param();
+	let { id } = c.req.param();
+
+	const supaId = c.req.query("supaId"); // true || null
+	if (supaId) {
+		const user = await prisma.user.findUnique({
+			where: {
+				supabaseUid: id,
+			},
+			select: {
+				id: true, // Kita hanya mengambil kolom id saja
+			},
+		});
+
+		if (user) {
+			id = user.id;
+		} else {
+			return c.json({ error: "User not found. supa id = true" }, 404);
+		}
+	}
 
 	const user = await prisma.user.findUnique({
 		where: { id },
