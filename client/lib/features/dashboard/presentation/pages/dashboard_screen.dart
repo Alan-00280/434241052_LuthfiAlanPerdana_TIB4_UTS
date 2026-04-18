@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:helpdesk_ticketing/core/widgets/loading_skeleton.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
-import 'package:helpdesk_ticketing/core/widgets/loading_skeleton.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -25,7 +25,7 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: authState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const StatCardSkeleton(),
         error: (error, stackTrace) => Center(child: Text('Error: $error')),
         data: (user) {
           if (user == null) {

@@ -6,6 +6,7 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
 	const method = c.req.method;
 	const path = c.req.path;
 	const query = c.req.query();
+	const role = c.get("role");
 
 	await next();
 
@@ -17,6 +18,7 @@ export const loggerMiddleware = async (c: Context, next: Next) => {
 			method,
 			path,
 			status,
+			role,
 			duration: `${duration}ms`,
 			query: Object.keys(query).length > 0 ? query : undefined,
 		},

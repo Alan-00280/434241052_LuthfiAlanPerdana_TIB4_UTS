@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PrismaClient } from "../generated/prisma/client.js";
-import withPrisma from "../lib/prisma.js";
+import { requireRole } from "../lib/rbac.js";
 
 // ─────────────────────────────────────────
 // ATTACHMENTS
@@ -15,7 +15,9 @@ type ContextWithPrisma = {
 export const attachments = new Hono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/attachments — list attachment tiket
-attachments.get("/", withPrisma, async (c) => {
+attachments.get("/", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
@@ -30,7 +32,7 @@ attachments.get("/", withPrisma, async (c) => {
 // POST /tickets/:ticketId/attachments — tambah attachment (FR-005)
 // Catatan: fileUrl diasumsikan sudah diupload ke Supabase Storage duluan,
 // lalu URL-nya dikirim ke endpoint ini untuk disimpan ke DB
-// attachments.post("/", withPrisma, async (c) => {
+// attachments.post("/", async (c) => {
 //   const prisma = c.get("prisma");
 //   const ticketId = c.req.param("ticketId");
 //   const body = await c.req.json();
@@ -56,7 +58,9 @@ attachments.get("/", withPrisma, async (c) => {
 // });
 
 // DELETE /tickets/:ticketId/attachments/:id — hapus attachment
-attachments.delete("/:id", withPrisma, async (c) => {
+attachments.delete("/:id", async (c) => {
+	requireRole("USER");
+
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -71,7 +75,9 @@ attachments.delete("/:id", withPrisma, async (c) => {
 export const notifications = new Hono<ContextWithPrisma>();
 
 // GET /notifications?userId= — list notifikasi user (FR-007)
-notifications.get("/", withPrisma, async (c) => {
+notifications.get("/", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	let userId = c.req.query("userId");
 	const supaId = c.req.query("supaId");
@@ -114,7 +120,9 @@ notifications.get("/", withPrisma, async (c) => {
 });
 
 // PATCH /notifications/:id/read — tandai satu notifikasi sudah dibaca (FR-007)
-notifications.patch("/:id/read", withPrisma, async (c) => {
+notifications.patch("/:id/read", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -127,7 +135,9 @@ notifications.patch("/:id/read", withPrisma, async (c) => {
 });
 
 // PATCH /notifications/read-all — tandai semua notifikasi dibaca
-notifications.patch("/read-all", withPrisma, async (c) => {
+notifications.patch("/read-all", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 	const { userId } = body;
@@ -149,7 +159,9 @@ notifications.patch("/read-all", withPrisma, async (c) => {
 export const categories = new Hono<ContextWithPrisma>();
 
 // GET /categories — list semua kategori
-categories.get("/", withPrisma, async (c) => {
+categories.get("/", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const data = await prisma.ticketCategory.findMany({
 		orderBy: { name: "asc" },
@@ -158,7 +170,9 @@ categories.get("/", withPrisma, async (c) => {
 });
 
 // POST /categories — buat kategori baru (admin)
-categories.post("/", withPrisma, async (c) => {
+categories.post("/", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 
@@ -173,7 +187,9 @@ categories.post("/", withPrisma, async (c) => {
 });
 
 // PUT /categories/:id — update kategori
-categories.put("/:id", withPrisma, async (c) => {
+categories.put("/:id", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -187,7 +203,9 @@ categories.put("/:id", withPrisma, async (c) => {
 });
 
 // DELETE /categories/:id — hapus kategori
-categories.delete("/:id", withPrisma, async (c) => {
+categories.delete("/:id", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -202,7 +220,9 @@ categories.delete("/:id", withPrisma, async (c) => {
 export const histories = new Hono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/histories — riwayat lengkap tiket
-histories.get("/", withPrisma, async (c) => {
+histories.get("/", async (c) => {
+	requireRole("ADMIN", "HELPDESK", "USER");
+
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PrismaClient } from "../generated/prisma/client.js";
-import withPrisma from "../lib/prisma.js";
+import { requireRole } from "../lib/rbac.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -11,7 +11,7 @@ type ContextWithPrisma = {
 const comments = new Hono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/comments — list komentar tiket (FR-005)
-comments.get("/", withPrisma, async (c) => {
+comments.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
@@ -29,7 +29,7 @@ comments.get("/", withPrisma, async (c) => {
 });
 
 // POST /tickets/:ticketId/comments — tambah komentar / reply (FR-005)
-comments.post("/", withPrisma, async (c) => {
+comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 	const body = await c.req.json();
@@ -119,7 +119,7 @@ comments.post("/", withPrisma, async (c) => {
 });
 
 // PUT /tickets/:ticketId/comments/:id — edit komentar
-comments.put("/:id", withPrisma, async (c) => {
+comments.put("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -135,8 +135,8 @@ comments.put("/:id", withPrisma, async (c) => {
 	return c.json({ comment });
 });
 
-// DELETE /tickets/:ticketId/comments/:id — hapus komentar
-comments.delete("/:id", withPrisma, async (c) => {
+// DELETE /tickets/:ticketId/comments/:id — hapus komentar (author atau ADMIN)
+comments.delete("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 

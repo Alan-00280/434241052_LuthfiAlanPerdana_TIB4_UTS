@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { TicketPriority, TicketStatus } from "../generated/prisma/enums.js";
-import withPrisma from "../lib/prisma.js";
+import { requireRole } from "../lib/rbac.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -15,7 +15,7 @@ const tickets = new Hono<ContextWithPrisma>();
 // - user biasa: hanya tiket miliknya
 // - helpdesk/admin: semua tiket
 // Query params: status, priority, categoryId, assigneeId, page, limit
-tickets.get("/", withPrisma, async (c) => {
+tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 
 	const status = c.req.query("status") as TicketStatus | undefined;
@@ -59,7 +59,7 @@ tickets.get("/", withPrisma, async (c) => {
 });
 
 // GET /tickets/stats — statistik tiket untuk dashboard (FR-008)
-tickets.get("/stats", withPrisma, async (c) => {
+tickets.get("/stats", requireRole("ADMIN", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 
 	const [total, open, inProgress, pending, resolved, closed] =
@@ -78,7 +78,7 @@ tickets.get("/stats", withPrisma, async (c) => {
 });
 
 // GET /tickets/:id — detail tiket (FR-005)
-tickets.get("/:id", withPrisma, async (c) => {
+tickets.get("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -115,7 +115,7 @@ tickets.get("/:id", withPrisma, async (c) => {
 });
 
 // POST /tickets — buat tiket baru (FR-005)
-tickets.post("/", withPrisma, async (c) => {
+tickets.post("/", requireRole("USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 
@@ -170,7 +170,7 @@ tickets.post("/", withPrisma, async (c) => {
 });
 
 // PUT /tickets/:id — update tiket (FR-006)
-tickets.put("/:id", withPrisma, async (c) => {
+tickets.put("/:id", requireRole("ADMIN", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -204,7 +204,7 @@ tickets.put("/:id", withPrisma, async (c) => {
 	return c.json({ ticket });
 });
 // PATCH /tickets/:id/status — update status tiket (FR-006)
-tickets.patch("/:id/status", withPrisma, async (c) => {
+tickets.patch("/:id/status", requireRole("ADMIN", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -260,7 +260,7 @@ tickets.patch("/:id/status", withPrisma, async (c) => {
 });
 
 // PATCH /tickets/:id/assign — assign tiket ke helpdesk (FR-006)
-tickets.patch("/:id/assign", withPrisma, async (c) => {
+tickets.patch("/:id/assign", requireRole("ADMIN", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -314,8 +314,8 @@ tickets.patch("/:id/assign", withPrisma, async (c) => {
 	return c.json({ ticket });
 });
 
-// DELETE /tickets/:id — hapus tiket (admin only nanti)
-tickets.delete("/:id", withPrisma, async (c) => {
+// DELETE /tickets/:id — hapus tiket (admin only)
+tickets.delete("/:id", requireRole("ADMIN"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 

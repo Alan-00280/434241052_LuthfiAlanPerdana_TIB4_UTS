@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { PrismaClient } from "../generated/prisma/client.js";
-import withPrisma from "../lib/prisma.js";
+import { requireRole } from "../lib/rbac.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -11,7 +11,7 @@ type ContextWithPrisma = {
 const users = new Hono<ContextWithPrisma>();
 
 // GET /users — list semua user (admin only nanti)
-users.get("/", withPrisma, async (c) => {
+users.get("/", requireRole("ADMIN"), async (c) => {
 	const prisma = c.get("prisma");
 	const users = await prisma.user.findMany({
 		select: {
@@ -31,7 +31,7 @@ users.get("/", withPrisma, async (c) => {
 });
 
 // GET /users/:id — detail user
-users.get("/:id", withPrisma, async (c) => {
+users.get("/:id", requireRole("ADMIN", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	let { id } = c.req.param();
 
@@ -74,7 +74,7 @@ users.get("/:id", withPrisma, async (c) => {
 });
 
 // PUT /users/:id — update profil user
-users.put("/:id", withPrisma, async (c) => {
+users.put("/:id", requireRole("ADMIN", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -98,7 +98,7 @@ users.put("/:id", withPrisma, async (c) => {
 });
 
 // DELETE /users/:id — nonaktifkan user (soft delete)
-users.delete("/:id", withPrisma, async (c) => {
+users.delete("/:id", requireRole("ADMIN", "USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 

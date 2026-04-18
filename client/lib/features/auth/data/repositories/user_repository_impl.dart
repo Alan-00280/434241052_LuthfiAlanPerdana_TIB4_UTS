@@ -56,7 +56,6 @@ class AuthRepositoryImpl implements AuthRepository {
     final data = await ApiClient.instance.get(
       '/api/users/${supabaseUser.id}?supaId=true',
     );
-    print(data);
     return _mapToEntity(data);
   }
 

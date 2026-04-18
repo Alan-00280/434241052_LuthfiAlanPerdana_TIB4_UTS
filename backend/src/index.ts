@@ -2,6 +2,8 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import type { PrismaClient } from "./generated/prisma/client.js";
 import logger from "./lib/logger.js";
+import withPrisma from "./lib/prisma.js";
+import { authMiddleware } from "./middleware/auth.js";
 import { loggerMiddleware } from "./middleware/logger.js";
 import comments from "./routes/comments.js";
 import {
@@ -22,6 +24,8 @@ type ContextWithPrisma = {
 const app = new Hono<ContextWithPrisma>();
 
 // Global logger middleware
+app.use("*", withPrisma);
+app.use("*", authMiddleware);
 app.use("*", loggerMiddleware);
 
 app.get("api/health", (c) => {
