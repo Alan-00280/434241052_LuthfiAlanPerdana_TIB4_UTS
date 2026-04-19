@@ -1,12 +1,15 @@
 /// Prioritas tiket helpdesk.
-/// Nilai sesuai dengan API: LOW, MEDIUM, HIGH
+/// Nilai sesuai dengan API: LOW, MEDIUM, HIGH, CRITICAL
 enum TicketPriority {
   low,
   medium,
-  high;
+  high,
+  critical;
 
   static TicketPriority fromString(String? value) {
     switch (value?.toUpperCase()) {
+      case 'CRITICAL':
+        return TicketPriority.critical;
       case 'HIGH':
         return TicketPriority.high;
       case 'MEDIUM':
@@ -24,6 +27,8 @@ enum TicketPriority {
         return 'MEDIUM';
       case TicketPriority.high:
         return 'HIGH';
+      case TicketPriority.critical:
+        return 'CRITICAL';
     }
   }
 
@@ -35,6 +40,8 @@ enum TicketPriority {
         return 'Medium';
       case TicketPriority.high:
         return 'High';
+      case TicketPriority.critical:
+        return 'Critical';
     }
   }
 }

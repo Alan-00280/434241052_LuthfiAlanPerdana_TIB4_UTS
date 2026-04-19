@@ -30,8 +30,31 @@ users.get("/", requireRole("ADMIN"), async (c) => {
 	return c.json({ users });
 });
 
+// GET /users/assignees — mengambil semua asignee yang tersedia
+users.get("/assignees", requireRole("ADMIN", "HELPDESK"), async (c) => {
+	const prisma = c.get("prisma");
+
+	const assignees = await prisma.user.findMany({
+		where: {
+			role: {
+				in: ["HELPDESK", "ADMIN"],
+			},
+			isActive: true,
+		},
+		select: {
+			id: true,
+			username: true,
+			fullName: true,
+			role: true,
+			avatarUrl: true,
+		},
+	});
+
+	return c.json({ assignees });
+});
+
 // GET /users/:id — detail user
-users.get("/:id", requireRole("ADMIN", "USER"), async (c) => {
+users.get("/:id", requireRole("ADMIN", "USER", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 	let { id } = c.req.param();
 

@@ -33,6 +33,7 @@ abstract class TicketRepository {
   Future<TicketEntity> createTicket({
     required String title,
     required String description,
+    required String creatorId,
     String? categoryId,
     TicketPriority priority = TicketPriority.low,
   });
@@ -49,7 +50,7 @@ abstract class TicketRepository {
   Future<void> updateStatus(String id, TicketStatus status);
 
   /// PATCH /api/tickets/:id/assign
-  Future<void> assignTicket(String id, String assigneeId);
+  Future<void> assignTicket(String id, String assigneeId, String changedById);
 
   /// DELETE /api/tickets/:id
   Future<void> deleteTicket(String id);

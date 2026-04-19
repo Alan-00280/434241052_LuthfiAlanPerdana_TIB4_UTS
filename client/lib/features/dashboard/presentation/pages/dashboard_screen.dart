@@ -46,6 +46,12 @@ class DashboardScreen extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
+                Text(
+                  user.role.toString(), // fix: UserRole.helpdesk
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 ElevatedButton(
                   onPressed: () {
