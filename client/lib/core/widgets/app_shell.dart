@@ -21,45 +21,61 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       body: navigationShell,
       // FAB hanya untuk role User
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: isUser
           ? FloatingActionButton(
+              shape: const CircleBorder(),
               onPressed: () => context.push(AppRoutes.createTicket),
               backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.black,
+              foregroundColor: Colors.white,
               tooltip: 'Buat Tiket Baru',
+              elevation: 4,
               child: const Icon(Icons.add),
             )
           : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) => _onTabTapped(index, context),
-        selectedItemColor: AppColors.primaryDark,
-        unselectedItemColor: AppColors.grey500,
-        backgroundColor: AppColors.white,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: AppTextStyles.label,
-        unselectedLabelStyle: AppTextStyles.caption,
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8.0,
+        color: Theme.of(context).colorScheme.surface,
         elevation: 8,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+        padding: EdgeInsets.zero,
+        child: SizedBox(
+          height: 65,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(context, 0, Icons.dashboard_outlined, Icons.dashboard, 'Dashboard'),
+              _buildNavItem(context, 1, Icons.confirmation_number_outlined, Icons.confirmation_number, 'Tiket'),
+              if (isUser) const SizedBox(width: 48), // Space for FAB
+              _buildNavItem(context, 2, Icons.notifications_none, Icons.notifications, 'Notif'),
+              _buildNavItem(context, 3, Icons.person_outline, Icons.person, 'Profil'),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.confirmation_number_outlined),
-            activeIcon: Icon(Icons.confirmation_number),
-            label: 'Tiket',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            activeIcon: Icon(Icons.notifications),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(BuildContext context, int index, IconData icon, IconData activeIcon, String label) {
+    final isSelected = navigationShell.currentIndex == index;
+    final color = isSelected ? AppColors.primaryDark : AppColors.grey500;
+
+    return InkWell(
+      onTap: () => _onTabTapped(index, context),
+      customBorder: const CircleBorder(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(isSelected ? activeIcon : icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
           ),
         ],
       ),

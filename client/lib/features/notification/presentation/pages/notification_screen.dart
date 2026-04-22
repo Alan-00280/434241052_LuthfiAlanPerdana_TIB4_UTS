@@ -22,9 +22,17 @@ class NotificationScreen extends ConsumerWidget {
         title: 'Notifikasi',
         actions: [
           if (state.unreadCount > 0)
-            TextButton(
-              onPressed: () => notifier.markAllAsRead(),
-              child: const Text('Baca Semua', style: TextStyle(color: AppColors.primary)),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: TextButton.icon(
+                onPressed: () => notifier.markAllAsRead(),
+                icon: const Icon(Icons.done_all, color: AppColors.white, size: 20),
+                label: const Text('Baca Semua', style: TextStyle(color: AppColors.white)),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.white.withOpacity(0.2),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
             ),
         ],
       ),
@@ -185,6 +193,7 @@ class _NotificationTile extends ConsumerWidget {
                   },
                   child: const Text('Buka Tiket', style: TextStyle(color: Colors.white)),
                 ),
+                SizedBox(height: 20.0)
               ],
             ),
           ),

@@ -5,6 +5,7 @@ import logger from "./lib/logger.js";
 import withPrisma from "./lib/prisma.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { loggerMiddleware } from "./middleware/logger.js";
+import auth from "./routes/auth.js";
 import comments from "./routes/comments.js";
 import {
 	attachments,
@@ -35,6 +36,7 @@ app.get("api/health", (c) => {
 	return c.text("Hello Hono! Helpdesk API Server Activated");
 });
 
+app.route("api/auth", auth);
 app.route("api/users", users);
 app.route("api/tickets", tickets);
 app.route("api/categories", categories);

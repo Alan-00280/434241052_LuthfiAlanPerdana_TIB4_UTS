@@ -8,5 +8,6 @@ abstract class AuthRepository {
   Future<UserEntity> signIn(String email, String password);
 
   Future<void> signUp(String email, String password);
+  Future<void> registerToServer(Map<String, dynamic> data);
   Future<void> signOut();
 }

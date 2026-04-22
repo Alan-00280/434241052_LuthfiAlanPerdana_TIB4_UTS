@@ -29,6 +29,8 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'E-Ticketing Helpdesk',
       theme: getAppTheme(),
+      darkTheme: getDarkTheme(),
+      themeMode: ThemeMode.system,
       scaffoldMessengerKey: messengerKey,
       routerConfig: router,
     );

@@ -1,0 +1,1 @@
+Before performing any analysis or code review, always call the get_minimal_context tool from the code-review-graph. Use the 'blast-radius' analysis to identify only affected files and their dependents. Do not read the entire codebase unless explicitly requested.

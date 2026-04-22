@@ -5,6 +5,7 @@ import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_pro
 import 'dart:io';
 import 'package:helpdesk_ticketing/main.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
+import 'package:helpdesk_ticketing/features/auth/presentation/pages/register_page.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key});
@@ -99,7 +100,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login'), centerTitle: true),
+      appBar: AppBar(title: Text('Login', style: TextStyle(
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),), centerTitle: true),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -109,7 +112,9 @@ class _AuthPageState extends ConsumerState<AuthPage> {
               const SizedBox(height: AppSpacing.xl),
               Text(
                 'E-Ticketing Helpdesk',
-                style: AppTextStyles.headline,
+                style: AppTextStyles.headline.copyWith(
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               TextField(
@@ -147,6 +152,18 @@ class _AuthPageState extends ConsumerState<AuthPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Login'),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegisterPage(),
+                    ),
+                  );
+                },
+                child: const Text('Don\'t have account? create a new one'),
               ),
             ],
           ),

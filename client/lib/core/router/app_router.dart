@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:helpdesk_ticketing/core/router/route_names.dart';
 import 'package:helpdesk_ticketing/core/widgets/app_shell.dart';
+import 'package:helpdesk_ticketing/features/auth/domain/entities/user_entity.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/pages/auth_page.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
@@ -17,12 +18,21 @@ import 'package:helpdesk_ticketing/features/notification/presentation/pages/noti
 /// Provider GoRouter yang reaktif terhadap perubahan auth state.
 /// Router otomatis redirect berdasarkan status autentikasi pengguna.
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
+  final listenable = ValueNotifier<bool>(false);
+
+  ref.listen<AsyncValue<UserEntity?>>(
+    authControllerProvider,
+    (_, __) {
+      listenable.value = !listenable.value;
+    },
+  );
 
   return GoRouter(
     initialLocation: AppRoutes.login,
+    refreshListenable: listenable,
     debugLogDiagnostics: false,
     redirect: (context, state) {
+      final authState = ref.read(authControllerProvider);
       final isLoading = authState.isLoading;
       if (isLoading) return null;
 
@@ -78,16 +88,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: AppRoutes.tickets,
                 name: AppRoutes.ticketsName,
                 builder: (context, state) => const TicketListScreen(),
-                routes: [
-                  GoRoute(
-                    path: ':${AppRoutes.paramId}',
-                    name: AppRoutes.ticketDetailName,
-                    builder: (context, state) {
-                      final id = state.pathParameters[AppRoutes.paramId]!;
-                      return TicketDetailScreen(ticketId: id);
-                    },
-                  ),
-                ],
               ),
             ],
           ),
@@ -121,6 +121,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.createTicket,
         name: AppRoutes.createTicketName,
         builder: (context, state) => const CreateTicketScreen(),
+      ),
+
+      // ── Ticket Detail (di luar shell) ──────────────────────────────────
+      GoRoute(
+        path: AppRoutes.ticketDetail,
+        name: AppRoutes.ticketDetailName,
+        builder: (context, state) {
+          final id = state.pathParameters[AppRoutes.paramId]!;
+          return TicketDetailScreen(ticketId: id);
+        },
       ),
 
       // ── Assign Ticket (admin only, di luar shell) ──────────────────────

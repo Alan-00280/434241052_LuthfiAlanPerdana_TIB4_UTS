@@ -15,6 +15,13 @@ class AppColors {
   /// Varian primary lebih gelap
   static const Color primaryDark = Color(0xFFFFA000);
 
+  // ─── Dark Mode Colors ───────────────────────────────────────────────────
+  static const Color darkPrimary = Color(0xFFFFCA28);
+  static const Color darkPrimaryLight = Color(0xFFFFE082);
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkOnSurface = Color(0xFFE1E1E1);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+
   // ─── Neutral ────────────────────────────────────────────────────────────
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);

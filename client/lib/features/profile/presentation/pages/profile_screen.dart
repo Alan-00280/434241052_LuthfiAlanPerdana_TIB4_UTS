@@ -90,7 +90,7 @@ class ProfileScreen extends ConsumerWidget {
                           )
                         : const Text('Simpan'),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 44),
                 ],
               ),
             );

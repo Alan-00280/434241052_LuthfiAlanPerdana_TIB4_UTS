@@ -110,6 +110,7 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
                       onPressed: () => Navigator.pop(ctx),
                       child: const Text('Tutup'),
                     ),
+                    SizedBox(height: 20.0)
                   ],
                 ),
               ),
@@ -144,13 +145,13 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
       appBar: const CustomAppBar(
         title: 'Daftar Tiket',
       ),
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Bar Pencarian & Filter
           Container(
             padding: const EdgeInsets.all(16.0),
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: Row(
               children: [
                 Expanded(
@@ -170,7 +171,7 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
                         borderSide: BorderSide(color: Colors.grey.shade300),
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: Theme.of(context).scaffoldBackgroundColor,
                     ),
                   ),
                 ),
@@ -235,6 +236,7 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
               error: (error, stack) => Center(child: Text('Error: $error')),
             ),
           ),
+          SizedBox(height: 20.0)
         ],
       ),
     );
@@ -276,9 +278,9 @@ class _TicketCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -321,10 +323,10 @@ class _TicketCard extends StatelessWidget {
             // Title
             Text(
               ticket.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

@@ -76,20 +76,44 @@ class TicketDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Chip(
-                      label: Text(ticket.status.displayName),
-                      backgroundColor: Colors.blue.shade100,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.blue.withOpacity(0.5)),
+                      ),
+                      child: Text(
+                        ticket.status.displayName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Chip(
-                      label: Text(ticket.priority.displayName),
-                      backgroundColor: Colors.red.shade100,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.red.withOpacity(0.5)),
+                      ),
+                      child: Text(
+                        ticket.priority.displayName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red),
+                      ),
                     ),
                     if (ticket.category != null) ...[
                       const SizedBox(width: 8),
-                      Chip(
-                        label: Text(ticket.category!.name),
-                        backgroundColor: Colors.grey.shade200,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.grey.withOpacity(0.5)),
+                        ),
+                        child: Text(
+                          ticket.category!.name,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+                        ),
                       ),
                     ]
                   ],

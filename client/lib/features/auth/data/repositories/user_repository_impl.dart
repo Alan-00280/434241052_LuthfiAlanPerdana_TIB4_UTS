@@ -65,6 +65,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> registerToServer(Map<String, dynamic> data) async {
+    await ApiClient.instance.post('/api/auth', body: data); 
+  }
+
+  @override
   Future<void> signOut() async {
     ApiClient.instance.setToken(null);
     return ds.signOut();

@@ -41,3 +41,5 @@ next-env.d.ts
 **/changes
 **/spec
 /*spec
+# Added by code-review-graph
+.code-review-graph/
