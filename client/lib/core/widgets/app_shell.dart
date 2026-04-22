@@ -52,6 +52,11 @@ class AppShell extends ConsumerWidget {
             label: 'Tiket',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none),
+            activeIcon: Icon(Icons.notifications),
+            label: 'Notifikasi',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profil',
@@ -70,6 +75,9 @@ class AppShell extends ConsumerWidget {
         context.go(AppRoutes.tickets);
         break;
       case 2:
+        context.go(AppRoutes.notifications);
+        break;
+      case 3:
         context.go(AppRoutes.profile);
         break;
     }

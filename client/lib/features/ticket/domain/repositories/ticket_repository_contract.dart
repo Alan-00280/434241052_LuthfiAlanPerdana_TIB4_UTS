@@ -21,10 +21,11 @@ abstract class TicketRepository {
     String? categoryId,
     String? assigneeId,
     String? creatorId,
+    String? search,
   });
 
   /// GET /api/tickets/stats
-  Future<TicketStatsEntity> getStats({String? creatorId});
+  Future<TicketStatsEntity> getStats({String? userId});
 
   /// GET /api/tickets/:id
   Future<TicketEntity> getTicketById(String id);
@@ -36,6 +37,7 @@ abstract class TicketRepository {
     required String creatorId,
     String? categoryId,
     TicketPriority priority = TicketPriority.low,
+    List<File>? attachments,
   });
 
   /// PUT /api/tickets/:id
@@ -47,7 +49,7 @@ abstract class TicketRepository {
   });
 
   /// PATCH /api/tickets/:id/status
-  Future<void> updateStatus(String id, TicketStatus status);
+  Future<void> updateStatus(String id, TicketStatus status, String changedById, {String? note});
 
   /// PATCH /api/tickets/:id/assign
   Future<void> assignTicket(String id, String assigneeId, String changedById);
@@ -61,7 +63,7 @@ abstract class TicketRepository {
   Future<List<CommentEntity>> getComments(String ticketId);
 
   /// POST /api/tickets/:id/comments
-  Future<CommentEntity> createComment(String ticketId, String body);
+  Future<CommentEntity> createComment(String ticketId, String authorId, String body);
 
   /// PUT /api/tickets/:id/comments/:commentId
   Future<CommentEntity> updateComment(
@@ -79,10 +81,10 @@ abstract class TicketRepository {
   Future<List<AttachmentEntity>> getAttachments(String ticketId);
 
   /// Upload file attachment (multipart POST)
-  Future<AttachmentEntity> uploadAttachment(String ticketId, File file);
+  Future<void> uploadAttachments(String ticketId, List<File> files, String changedById);
 
   /// DELETE /api/tickets/:id/attachments/:attachmentId
-  Future<void> deleteAttachment(String ticketId, String attachmentId);
+  Future<void> deleteAttachment(String ticketId, String attachmentId, String changedById);
 
   // ─── History ──────────────────────────────────────────────────────────
 

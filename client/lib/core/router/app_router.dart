@@ -12,6 +12,7 @@ import 'package:helpdesk_ticketing/features/ticket/presentation/pages/ticket_det
 import 'package:helpdesk_ticketing/features/ticket/presentation/pages/create_ticket_screen.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/pages/assign_ticket_screen.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/profile_screen.dart';
+import 'package:helpdesk_ticketing/features/notification/presentation/pages/notification_screen.dart';
 
 /// Provider GoRouter yang reaktif terhadap perubahan auth state.
 /// Router otomatis redirect berdasarkan status autentikasi pengguna.
@@ -87,6 +88,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     },
                   ),
                 ],
+              ),
+            ],
+          ),
+
+          // Tab 2: Notifications
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.notifications,
+                name: AppRoutes.notificationsName,
+                builder: (context, state) => const NotificationScreen(),
               ),
             ],
           ),

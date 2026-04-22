@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import type { PrismaClient } from "../generated/prisma/client.js";
+import { uploadAttachments } from "../lib/attachment.js";
 import { requireRole } from "../lib/rbac.js";
+import { supabase } from "../lib/supabase.js";
 
 // ─────────────────────────────────────────
 // ATTACHMENTS
@@ -30,32 +32,71 @@ attachments.get("/", async (c) => {
 });
 
 // POST /tickets/:ticketId/attachments — tambah attachment (FR-005)
-// Catatan: fileUrl diasumsikan sudah diupload ke Supabase Storage duluan,
-// lalu URL-nya dikirim ke endpoint ini untuk disimpan ke DB
-// attachments.post("/", async (c) => {
-//   const prisma = c.get("prisma");
-//   const ticketId = c.req.param("ticketId");
-//   const body = await c.req.json();
+attachments.post("/", requireRole("USER"), async (c) => {
+	const prisma = c.get("prisma");
+	const ticketId = c.req.param("ticketId");
+	const formData = await c.req.formData();
 
-//   const { fileName, fileUrl, fileSize, mimeType, source } = body;
+	const changedById = formData.get("changedById") as string;
+	if (!changedById) return c.json({ error: "Changed by Id Wajib di isi" }, 401);
 
-//   if (!fileName || !fileUrl || !fileSize || !mimeType) {
-//     return c.json({ error: "fileName, fileUrl, fileSize, dan mimeType wajib diisi" }, 400);
-//   }
+	if (!ticketId) {
+		return c.json({ error: "ticketId wajib ada" }, 400);
+	}
 
-//   const attachment = await prisma.attachment.create({
-//     data: {
-//       ticketId,
-//       fileName,
-//       fileUrl,
-//       fileSize,
-//       mimeType,
-//       source: source ?? "UPLOAD",
-//     },
-//   });
+	const files = formData.getAll("attachments") as File[];
 
-//   return c.json({ attachment }, 201);
-// });
+	if (!files || files.length === 0) {
+		return c.json({ error: "File wajib diupload" }, 400);
+	}
+
+	const ticket = await prisma.ticket.findUnique({
+		where: { id: ticketId },
+	});
+
+	if (!ticket) {
+		return c.json({ error: "Ticket tidak ditemukan" }, 404);
+	}
+
+	const currentAttch = await prisma.attachment.findMany({
+		where: { ticketId },
+		orderBy: { uploadedAt: "desc" },
+	});
+
+	try {
+		const uploadedFiles = await uploadAttachments({
+			files,
+			userId: ticket.creatorId,
+			ticketId,
+		});
+
+		const attachments = await prisma.attachment.createMany({
+			data: uploadedFiles,
+		});
+
+		// 4. history
+		await prisma.ticketHistory.create({
+			data: {
+				ticketId,
+				changedById,
+				field: "add_attachment",
+				oldValue: currentAttch.length.toString(),
+				newValue: attachments.count.toString(),
+				note: `Menambah Attachments`,
+			},
+		});
+
+		return c.json(
+			{
+				message: "Attachment berhasil diupload",
+				count: attachments.count,
+			},
+			201,
+		);
+	} catch (err: any) {
+		return c.json({ error: err.message }, 500);
+	}
+});
 
 // DELETE /tickets/:ticketId/attachments/:id — hapus attachment
 attachments.delete("/:id", async (c) => {
@@ -63,8 +104,46 @@ attachments.delete("/:id", async (c) => {
 
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
+	const body = await c.req.json();
 
-	await prisma.attachment.delete({ where: { id } });
+	const { changedById } = body;
+	if (!changedById) return c.json({ error: "Changed by Id Wajib di isi" }, 401);
+
+	// 1. Ambil data attachment dulu
+	const attachment = await prisma.attachment.findUnique({
+		where: { id },
+	});
+
+	if (!attachment) {
+		return c.json({ error: "Attachment tidak ditemukan" }, 404);
+	}
+
+	// 2. Hapus file di Supabase Storage
+	const { error: storageError } = await supabase.storage
+		.from("tickets")
+		.remove([attachment.fileUrl]); // fileUrl = path saat upload
+
+	if (storageError && !storageError.message.includes("not found")) {
+		return c.json({ error: storageError.message }, 500);
+	}
+
+	// 3. Hapus record di PostgreSQL (via Prisma)
+	await prisma.attachment.delete({
+		where: { id },
+	});
+
+	// 4. history
+	await prisma.ticketHistory.create({
+		data: {
+			ticketId: attachment.ticketId,
+			changedById,
+			field: "delete_attachment",
+			oldValue: attachment.fileName,
+			newValue: null,
+			note: `Menghapus Attachment ${attachment.fileName}`,
+		},
+	});
+
 	return c.json({ message: "Attachment berhasil dihapus" });
 });
 
@@ -233,7 +312,7 @@ histories.get("/", async (c) => {
 				select: { id: true, fullName: true, role: true, avatarUrl: true },
 			},
 		},
-		orderBy: { createdAt: "asc" },
+		orderBy: { createdAt: "desc" },
 	});
 
 	return c.json({ histories: data });

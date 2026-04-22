@@ -11,6 +11,7 @@ class AppRoutes {
   static const String createTicket = '/create-ticket';
   static const String assignTicket = '/assign-ticket/:id';
   static const String profile = '/profile';
+  static const String notifications = '/notifications';
   static const String notFound = '/404';
 
   // ─── Named Routes ────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ class AppRoutes {
   static const String createTicketName = 'create-ticket';
   static const String assignTicketName = 'assign-ticket';
   static const String profileName = 'profile';
+  static const String notificationsName = 'notifications';
   static const String notFoundName = 'not-found';
 
   // ─── Parameter Keys ──────────────────────────────────────────────────────

@@ -104,16 +104,16 @@ comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 		});
 	}
 
-	await prisma.ticketHistory.create({
-		data: {
-			ticketId,
-			changedById: authorId,
-			field: "comment",
-			oldValue: null,
-			newValue: commentBody,
-			note: "Komentar ditambahkan",
-		},
-	});
+	// await prisma.ticketHistory.create({
+	// 	data: {
+	// 		ticketId,
+	// 		changedById: authorId,
+	// 		field: "comment",
+	// 		oldValue: null,
+	// 		newValue: commentBody,
+	// 		note: "Komentar ditambahkan",
+	// 	},
+	// });
 
 	return c.json({ comment }, 201);
 });

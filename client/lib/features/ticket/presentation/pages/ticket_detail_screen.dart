@@ -1,9 +1,16 @@
+import 'package:helpdesk_ticketing/features/ticket/presentation/widgets/ticket_histories_list.dart';
+import 'package:helpdesk_ticketing/features/ticket/presentation/widgets/ticket_comments_list.dart';
+import 'package:helpdesk_ticketing/features/ticket/presentation/widgets/update_status_dialog.dart';
+import 'package:helpdesk_ticketing/features/ticket/presentation/widgets/ticket_attachments_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:helpdesk_ticketing/core/router/route_names.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_detail_provider.dart';
+import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_list_provider.dart';
+
+import 'package:helpdesk_ticketing/core/widgets/custom_app_bar.dart';
 
 class TicketDetailScreen extends ConsumerWidget {
   final String ticketId;
@@ -16,8 +23,28 @@ class TicketDetailScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Tiket'),
+      appBar: CustomAppBar(
+        title: 'Detail Tiket',
+        actions: [
+          if (user?.role.isAdmin ?? false)
+            ticketAsync.whenData((ticket) => IconButton(
+                  icon: const Icon(Icons.edit_note, color: Colors.blue),
+                  tooltip: 'Ubah Status',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => UpdateStatusDialog(
+                        ticketId: ticketId,
+                        initialStatus: ticket.status,
+                        userId: user!.id,
+                      ),
+                    ).then((_) {
+                      ref.invalidate(ticketDetailProvider(ticketId));
+                      ref.invalidate(ticketListProvider);
+                    });
+                  },
+                )).value ?? const SizedBox.shrink(),
+        ],
       ),
       floatingActionButton: (user?.role.isAdmin ?? false)
           ? FloatingActionButton.extended(
@@ -77,6 +104,28 @@ class TicketDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(ticket.description),
                 const Divider(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Lampiran',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (context) => TicketAttachmentsModal(ticketId: ticketId),
+                        );
+                      },
+                      icon: const Icon(Icons.attachment),
+                      label: const Text('Buka Berkas'),
+                    ),
+                  ],
+                ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(child: Icon(Icons.person)),
@@ -91,12 +140,39 @@ class TicketDetailScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 32),
                 Text(
+                  'Komentar',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                TicketCommentsList(ticketId: ticketId),
+                const Divider(height: 32),
+                Text(
                   'Dibuat pada: ${ticket.createdAt.toLocal().toString().split('.')[0]}',
                 ),
                 if (ticket.updatedAt.isAfter(ticket.createdAt))
                   Text(
                     'Diperbarui pada: ${ticket.updatedAt.toLocal().toString().split('.')[0]}',
                   ),
+                const Divider(height: 32),
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: Text(
+                      'Riwayat Perubahan',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: TicketHistoriesList(ticketId: ticketId),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
@@ -109,3 +185,4 @@ class TicketDetailScreen extends ConsumerWidget {
     );
   }
 }
+

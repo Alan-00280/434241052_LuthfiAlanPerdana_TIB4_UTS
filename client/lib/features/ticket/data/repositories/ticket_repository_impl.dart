@@ -11,6 +11,9 @@ import 'package:helpdesk_ticketing/features/ticket/domain/entities/paginated_res
 import 'package:helpdesk_ticketing/features/ticket/domain/entities/ticket_entity.dart';
 import 'package:helpdesk_ticketing/features/ticket/domain/entities/ticket_stats_entity.dart';
 import 'package:helpdesk_ticketing/features/ticket/domain/repositories/ticket_repository_contract.dart';
+import 'package:helpdesk_ticketing/features/ticket/data/models/history_model.dart';
+import 'package:helpdesk_ticketing/features/ticket/data/models/comment_model.dart';
+import 'package:helpdesk_ticketing/features/ticket/data/models/attachment_model.dart';
 
 class TicketRepositoryImpl implements TicketRepository {
   @override
@@ -22,6 +25,7 @@ class TicketRepositoryImpl implements TicketRepository {
     String? categoryId,
     String? assigneeId,
     String? creatorId,
+    String? search,
   }) async {
     final query = <String, String?>{
       'page': page.toString(),
@@ -31,6 +35,7 @@ class TicketRepositoryImpl implements TicketRepository {
       if (categoryId != null) 'categoryId': categoryId,
       if (assigneeId != null) 'assigneeId': assigneeId,
       if (creatorId != null) 'creatorId': creatorId,
+      if (search != null && search.isNotEmpty) 'search': search,
     };
 
     final response = await ApiClient.instance.get('/api/tickets', query: query);
@@ -55,8 +60,15 @@ class TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<CommentEntity> createComment(String ticketId, String body) {
-    throw UnimplementedError();
+  Future<CommentEntity> createComment(String ticketId, String authorId, String body) async {
+    final response = await ApiClient.instance.post(
+      '/api/tickets/$ticketId/comments', 
+      body: {
+        'authorId': authorId,
+        'body': body,
+      },
+    );
+    return CommentModel.fromJson(response['comment'] as Map<String, dynamic>);
   }
 
   @override
@@ -66,21 +78,42 @@ class TicketRepositoryImpl implements TicketRepository {
     required String creatorId,
     String? categoryId,
     TicketPriority priority = TicketPriority.low,
+    List<File>? attachments,
   }) async {
-    final body = {
-      'title': title,
-      'description': description,
-      'creatorId': creatorId,
-      if (categoryId != null) 'categoryId': categoryId,
-      'priority': priority.value,
-    };
-    final response = await ApiClient.instance.post('/api/tickets', body: body);
-    return TicketModel.fromJson(response['ticket'] as Map<String, dynamic>);
+    if (attachments != null && attachments.isNotEmpty) {
+      final fields = {
+        'title': title,
+        'description': description,
+        'creatorId': creatorId,
+        'priority': priority.value,
+        if (categoryId != null) 'categoryId': categoryId,
+      };
+      final response = await ApiClient.instance.postMultipart(
+        '/api/tickets',
+        fields: fields,
+        files: attachments,
+        fileFieldName: 'attachments',
+      );
+      return TicketModel.fromJson(response['ticket'] as Map<String, dynamic>);
+    } else {
+      final body = {
+        'title': title,
+        'description': description,
+        'creatorId': creatorId,
+        'priority': priority.value,
+        if (categoryId != null) 'categoryId': categoryId,
+      };
+      final response = await ApiClient.instance.post('/api/tickets', body: body);
+      return TicketModel.fromJson(response['ticket'] as Map<String, dynamic>);
+    }
   }
 
   @override
-  Future<void> deleteAttachment(String ticketId, String attachmentId) {
-    throw UnimplementedError();
+  Future<void> deleteAttachment(String ticketId, String attachmentId, String changedById) async {
+    await ApiClient.instance.delete(
+      '/api/tickets/$ticketId/attachments/$attachmentId',
+      body: {'changedById': changedById},
+    );
   }
 
   @override
@@ -94,23 +127,41 @@ class TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<List<AttachmentEntity>> getAttachments(String ticketId) {
-    throw UnimplementedError();
+  Future<List<AttachmentEntity>> getAttachments(String ticketId) async {
+    final response = await ApiClient.instance.get('/api/tickets/$ticketId/attachments');
+    final attachments = response['attachments'] as List? ?? [];
+    return attachments.map((e) => AttachmentModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
-  Future<List<CommentEntity>> getComments(String ticketId) {
-    throw UnimplementedError();
+  Future<List<CommentEntity>> getComments(String ticketId) async {
+    final response = await ApiClient.instance.get('/api/tickets/$ticketId/comments');
+    final comments = response['comments'] as List? ?? [];
+    return comments.map((e) => CommentModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
-  Future<List<HistoryEntity>> getHistories(String ticketId) {
-    throw UnimplementedError();
+  Future<List<HistoryEntity>> getHistories(String ticketId) async {
+    final response = await ApiClient.instance.get('/api/tickets/$ticketId/histories');
+    final histories = response['histories'] as List? ?? [];
+    return histories.map((e) => HistoryModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   @override
-  Future<TicketStatsEntity> getStats({String? creatorId}) {
-    throw UnimplementedError();
+  Future<TicketStatsEntity> getStats({String? userId}) async {
+    final query = <String, String?>{
+      if (userId != null) 'userId': userId,
+    };
+    final response = await ApiClient.instance.get('/api/tickets/stats', query: query);
+    final stats = response['stats'] as Map<String, dynamic>;
+    return TicketStatsEntity(
+      total: stats['total'] as int? ?? 0,
+      open: stats['open'] as int? ?? 0,
+      inProgress: stats['inProgress'] as int? ?? 0,
+      pending: stats['pending'] as int? ?? 0,
+      resolved: stats['resolved'] as int? ?? 0,
+      closed: stats['closed'] as int? ?? 0,
+    );
   }
 
   @override
@@ -129,8 +180,13 @@ class TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<void> updateStatus(String id, TicketStatus status) {
-    throw UnimplementedError();
+  Future<void> updateStatus(String id, TicketStatus status, String changedById, {String? note}) async {
+    final body = {
+      'status': status.value,
+      'changedById': changedById,
+      if (note != null) 'note': note,
+    };
+    await ApiClient.instance.patch('/api/tickets/$id/status', body: body);
   }
 
   @override
@@ -144,7 +200,13 @@ class TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<AttachmentEntity> uploadAttachment(String ticketId, File file) {
-    throw UnimplementedError();
+  Future<void> uploadAttachments(String ticketId, List<File> files, String changedById) async {
+    if (files.isEmpty) return;
+    await ApiClient.instance.postMultipart(
+      '/api/tickets/$ticketId/attachments',
+      files: files,
+      fields: {'changedById': changedById},
+      fileFieldName: 'attachments',
+    );
   }
 }

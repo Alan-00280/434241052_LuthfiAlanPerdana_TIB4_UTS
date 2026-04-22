@@ -25,7 +25,10 @@ const app = new Hono<ContextWithPrisma>();
 
 // Global logger middleware
 app.use("*", withPrisma);
-app.use("*", authMiddleware);
+app.use("api/users/*", authMiddleware);
+app.use("api/tickets/*", authMiddleware);
+app.use("api/categories/*", authMiddleware);
+app.use("api/notifications/*", authMiddleware);
 app.use("*", loggerMiddleware);
 
 app.get("api/health", (c) => {

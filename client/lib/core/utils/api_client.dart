@@ -96,12 +96,15 @@ class ApiClient {
 
   // ─── DELETE ─────────────────────────────────────────────────────────────
 
-  Future<dynamic> delete(String path) async {
+  Future<dynamic> delete(String path, {Object? body}) async {
     final uri = _buildUri(path);
     final client = HttpClient();
     try {
       final request = await client.deleteUrl(uri);
       _applyHeaders(request);
+      if (body != null) {
+        request.write(jsonEncode(body));
+      }
       final response = await request.close();
       return _parseResponse(response);
     } finally {
@@ -140,17 +143,101 @@ class ApiClient {
         body.write('$value\r\n');
       });
 
+      // Resolve Content-Type
+      final ext = file.uri.pathSegments.last.split('.').last.toLowerCase();
+      String mimeType = 'application/octet-stream';
+      if (ext == 'pdf') mimeType = 'application/pdf';
+      else if (ext == 'jpg' || ext == 'jpeg') mimeType = 'image/jpeg';
+      else if (ext == 'png') mimeType = 'image/png';
+      else if (ext == 'gif') mimeType = 'image/gif';
+      else if (ext == 'webp') mimeType = 'image/webp';
+      else if (ext == 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (ext == 'md') mimeType = 'text/markdown';
+      else if (ext == 'json') mimeType = 'application/json';
+
       // File field
       body.write('--$boundary\r\n');
       body.write(
         'Content-Disposition: form-data; name="$fieldName"; filename="${file.uri.pathSegments.last}"\r\n',
       );
-      body.write('Content-Type: application/octet-stream\r\n\r\n');
+      body.write('Content-Type: $mimeType\r\n\r\n');
 
       request.add(utf8.encode(body.toString()));
       request.add(bytes);
       request.add(utf8.encode('\r\n--$boundary--\r\n'));
 
+      final response = await request.close();
+      return _parseResponse(response);
+    } finally {
+      client.close();
+    }
+  }
+
+  Future<dynamic> postMultipart(
+    String path, {
+    Map<String, String>? fields,
+    List<File>? files,
+    String fileFieldName = 'attachments',
+  }) async {
+    final uri = _buildUri(path);
+    final boundary = '----FormBoundary${DateTime.now().millisecondsSinceEpoch}';
+    final client = HttpClient();
+    
+    try {
+      final request = await client.postUrl(uri);
+      request.headers.set(
+        'Content-Type',
+        'multipart/form-data; boundary=$boundary',
+      );
+      if (_accessToken != null) {
+        request.headers.set('Authorization', 'Bearer $_accessToken');
+      }
+
+      final body = StringBuffer();
+
+      // Additional fields
+      fields?.forEach((key, value) {
+        body.write('--$boundary\r\n');
+        body.write('Content-Disposition: form-data; name="$key"\r\n\r\n');
+        body.write('$value\r\n');
+      });
+
+      // Initialize byte array payload
+      final payloadData = <int>[];
+      payloadData.addAll(utf8.encode(body.toString()));
+
+      // Files
+      if (files != null) {
+        for (final file in files) {
+          final ext = file.uri.pathSegments.last.split('.').last.toLowerCase();
+          String mimeType = 'application/octet-stream';
+          if (ext == 'pdf') mimeType = 'application/pdf';
+          else if (ext == 'jpg' || ext == 'jpeg') mimeType = 'image/jpeg';
+          else if (ext == 'png') mimeType = 'image/png';
+          else if (ext == 'gif') mimeType = 'image/gif';
+          else if (ext == 'webp') mimeType = 'image/webp';
+          else if (ext == 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          else if (ext == 'md') mimeType = 'text/markdown';
+          else if (ext == 'json') mimeType = 'application/json';
+
+          final fileHeader = StringBuffer();
+          fileHeader.write('--$boundary\r\n');
+          fileHeader.write(
+            'Content-Disposition: form-data; name="$fileFieldName"; filename="${file.uri.pathSegments.last}"\r\n',
+          );
+          fileHeader.write('Content-Type: $mimeType\r\n\r\n');
+          payloadData.addAll(utf8.encode(fileHeader.toString()));
+          
+          final bytes = await file.readAsBytes();
+          payloadData.addAll(bytes);
+          payloadData.addAll(utf8.encode('\r\n'));
+        }
+      }
+
+      payloadData.addAll(utf8.encode('--$boundary--\r\n'));
+
+      request.add(payloadData);
+      
       final response = await request.close();
       return _parseResponse(response);
     } finally {

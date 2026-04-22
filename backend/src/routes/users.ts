@@ -97,7 +97,7 @@ users.get("/:id", requireRole("ADMIN", "USER", "HELPDESK"), async (c) => {
 });
 
 // PUT /users/:id — update profil user
-users.put("/:id", requireRole("ADMIN", "USER"), async (c) => {
+users.put("/:id", requireRole("ADMIN", "USER", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -106,14 +106,22 @@ users.put("/:id", requireRole("ADMIN", "USER"), async (c) => {
 
 	const user = await prisma.user.update({
 		where: { id },
-		data: { fullName, phone, avatarUrl },
+		data: {
+			...(fullName !== undefined && { fullName }),
+			...(phone !== undefined && { phone }),
+			...(avatarUrl !== undefined && { avatarUrl }),
+		},
 		select: {
 			id: true,
 			username: true,
 			email: true,
 			fullName: true,
+			role: true,
 			phone: true,
 			avatarUrl: true,
+			isActive: true,
+			createdAt: true,
+			lastLoginAt: true,
 		},
 	});
 

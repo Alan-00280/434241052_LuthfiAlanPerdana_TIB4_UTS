@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 import { TicketPriority, TicketStatus } from "../generated/prisma/enums.js";
+import { uploadAttachments } from "../lib/attachment.js";
 import { requireRole } from "../lib/rbac.js";
 
 type ContextWithPrisma = {
@@ -23,6 +24,7 @@ tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const categoryId = c.req.query("categoryId");
 	const assigneeId = c.req.query("assigneeId");
 	const creatorId = c.req.query("creatorId");
+	const search = c.req.query("search");
 	const page = parseInt(c.req.query("page") ?? "1", 10);
 	const limit = parseInt(c.req.query("limit") ?? "10", 10);
 	const skip = (page - 1) * limit;
@@ -33,6 +35,19 @@ tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 		...(categoryId && { categoryId }),
 		...(assigneeId && { assigneeId }),
 		...(creatorId && { creatorId }),
+		...(search && {
+			OR: [
+				{
+					title: { contains: search, mode: "insensitive" as Prisma.QueryMode },
+				},
+				{
+					description: {
+						contains: search,
+						mode: "insensitive" as Prisma.QueryMode,
+					},
+				},
+			],
+		}),
 	};
 
 	const [tickets, total] = await Promise.all([
@@ -54,26 +69,38 @@ tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 
 	return c.json({
 		tickets,
-		meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+		meta: {
+			total,
+			page,
+			limit,
+			totalPages: Math.ceil(total / limit),
+			hasNextPage: page * limit < total,
+		},
 	});
 });
 
 // GET /tickets/stats — statistik tiket untuk dashboard (FR-008)
-tickets.get("/stats", requireRole("ADMIN", "HELPDESK"), async (c) => {
+// GET /tickets/stats — statistik tiket untuk dashboard (FR-008)
+tickets.get("/stats", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 	const prisma = c.get("prisma");
+	const userId = c.req.query("userId");
+
+	// Membuat filter dinamis
+	const baseFilter = userId ? { creatorId: userId } : {};
 
 	const [total, open, inProgress, pending, resolved, closed] =
 		await Promise.all([
-			prisma.ticket.count(),
-			prisma.ticket.count({ where: { status: "OPEN" } }),
-			prisma.ticket.count({ where: { status: "IN_PROGRESS" } }),
-			prisma.ticket.count({ where: { status: "PENDING" } }),
-			prisma.ticket.count({ where: { status: "RESOLVED" } }),
-			prisma.ticket.count({ where: { status: "CLOSED" } }),
+			prisma.ticket.count({ where: baseFilter }),
+			prisma.ticket.count({ where: { ...baseFilter, status: "OPEN" } }),
+			prisma.ticket.count({ where: { ...baseFilter, status: "IN_PROGRESS" } }),
+			prisma.ticket.count({ where: { ...baseFilter, status: "PENDING" } }),
+			prisma.ticket.count({ where: { ...baseFilter, status: "RESOLVED" } }),
+			prisma.ticket.count({ where: { ...baseFilter, status: "CLOSED" } }),
 		]);
 
 	return c.json({
 		stats: { total, open, inProgress, pending, resolved, closed },
+		filteredBy: userId || "all",
 	});
 });
 
@@ -117,10 +144,16 @@ tickets.get("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 // POST /tickets — buat tiket baru (FR-005)
 tickets.post("/", requireRole("USER"), async (c) => {
 	const prisma = c.get("prisma");
-	const body = await c.req.json();
 
-	const { title, description, priority, categoryId, creatorId, attachments } =
-		body;
+	const formData = await c.req.formData();
+
+	const title = formData.get("title") as string;
+	const description = formData.get("description") as string;
+	const creatorId = formData.get("creatorId") as string;
+	const priority = formData.get("priority") as TicketPriority;
+	const categoryId = formData.get("categoryId") as string | null;
+
+	const files = formData.getAll("attachments") as File[];
 
 	if (!title || !description || !creatorId) {
 		return c.json(
@@ -129,6 +162,7 @@ tickets.post("/", requireRole("USER"), async (c) => {
 		);
 	}
 
+	// 1. Create ticket dulu
 	const ticket = await prisma.ticket.create({
 		data: {
 			title,
@@ -136,25 +170,29 @@ tickets.post("/", requireRole("USER"), async (c) => {
 			priority: priority ?? TicketPriority.MEDIUM,
 			creatorId,
 			categoryId: categoryId ?? null,
-
-			...(attachments?.length && {
-				attachments: {
-					create: attachments.map((file: any) => ({
-						fileName: file.fileName,
-						fileUrl: file.fileUrl,
-						fileSize: file.fileSize,
-						mimeType: file.mimeType,
-					})),
-				},
-			}),
-		},
-		include: {
-			creator: { select: { id: true, fullName: true } },
-			category: { select: { id: true, name: true } },
-			attachments: true,
 		},
 	});
 
+	let uploadedFiles: any[] = [];
+
+	// 2. Upload attachments (optional)
+	if (files.length > 0) {
+		try {
+			uploadedFiles = await uploadAttachments({
+				files,
+				userId: creatorId,
+				ticketId: ticket.id,
+			});
+
+			await prisma.attachment.createMany({
+				data: uploadedFiles,
+			});
+		} catch (err: any) {
+			return c.json({ error: err.message }, 500);
+		}
+	}
+
+	// 3. Ticket history
 	await prisma.ticketHistory.create({
 		data: {
 			ticketId: ticket.id,
@@ -166,11 +204,21 @@ tickets.post("/", requireRole("USER"), async (c) => {
 		},
 	});
 
-	return c.json({ ticket }, 201);
+	// 4. Return full data
+	const result = await prisma.ticket.findUnique({
+		where: { id: ticket.id },
+		include: {
+			creator: { select: { id: true, fullName: true } },
+			category: { select: { id: true, name: true } },
+			attachments: true,
+		},
+	});
+
+	return c.json({ ticket: result }, 201);
 });
 
 // PUT /tickets/:id — update tiket (FR-006)
-tickets.put("/:id", requireRole("ADMIN", "HELPDESK"), async (c) => {
+tickets.put("/:id", requireRole("USER"), async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -203,6 +251,7 @@ tickets.put("/:id", requireRole("ADMIN", "HELPDESK"), async (c) => {
 
 	return c.json({ ticket });
 });
+
 // PATCH /tickets/:id/status — update status tiket (FR-006)
 tickets.patch("/:id/status", requireRole("ADMIN", "HELPDESK"), async (c) => {
 	const prisma = c.get("prisma");
