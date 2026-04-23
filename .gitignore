@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+.claude/
+.cursorrules
+
 # dependencies
 /node_modules
 **/node_modules
@@ -41,5 +44,7 @@ next-env.d.ts
 **/changes
 **/spec
 /*spec
+
 # Added by code-review-graph
 .code-review-graph/
+
