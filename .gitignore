@@ -2,6 +2,9 @@
 
 .claude/
 .cursorrules
+.mcp*
+.opencode*
+GEMINI.md
 
 # dependencies
 /node_modules
