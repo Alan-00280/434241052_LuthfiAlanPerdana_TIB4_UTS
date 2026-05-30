@@ -31,20 +31,24 @@ async function createUser(data: {
 	phone: string;
 	role: UserRole;
 }) {
-	// 1. Buat di Supabase Auth
-	const { data: authData, error } = await supabase.auth.admin.createUser({
-		email: data.email,
-		password: data.password,
-		email_confirm: true, // langsung confirmed, tidak perlu verifikasi email
-	});
+	// 1. Buat di Supabase Auth Jika role nya bukan Techsupport
+	let authData = null;
+	if (data.role !== UserRole.TECHSUPPORT) {
+		const { data: auth, error } = await supabase.auth.admin.createUser({
+			email: data.email,
+			password: data.password,
+			email_confirm: true, // langsung confirmed, tidak perlu verifikasi email
+		});
+		authData = auth;
 
-	if (error && error.message !== "User already registered") {
-		throw new Error(`Supabase error for ${data.email}: ${error.message}`);
+		if (error && error.message !== "User already registered") {
+			throw new Error(`Supabase error for ${data.email}: ${error.message}`);
+		}
 	}
-
 	const supabaseUid = authData?.user?.id ?? null;
 
-	// 2. Upsert ke PostgreSQL dengan supabaseUid
+	// 2. Upsert ke PostgreSQL dengan supabaseUid menyesuaikan role
+	// if (data.role !== UserRole.TECHSUPPORT) {
 	return prisma.user.upsert({
 		where: { email: data.email },
 		update: { supabaseUid },
@@ -58,6 +62,9 @@ async function createUser(data: {
 			phone: data.phone,
 		},
 	});
+	// } else {
+	// 	return prisma.tech
+	// }
 }
 
 async function main() {

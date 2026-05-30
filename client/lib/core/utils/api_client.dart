@@ -23,6 +23,7 @@ class ApiClient {
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+        'ngrok-skip-browser-warning': 'true',
       };
 
   // ─── GET ────────────────────────────────────────────────────────────────
@@ -132,6 +133,7 @@ class ApiClient {
       if (_accessToken != null) {
         request.headers.set('Authorization', 'Bearer $_accessToken');
       }
+      request.headers.set('ngrok-skip-browser-warning', 'true');
 
       final bytes = await file.readAsBytes();
       final body = StringBuffer();
@@ -192,6 +194,7 @@ class ApiClient {
       if (_accessToken != null) {
         request.headers.set('Authorization', 'Bearer $_accessToken');
       }
+      request.headers.set('ngrok-skip-browser-warning', 'true');
 
       final body = StringBuffer();
 

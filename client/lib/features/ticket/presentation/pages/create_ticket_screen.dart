@@ -99,11 +99,12 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
         priority: _priority,
         categoryId: _categoryId,
         creatorId: user.id,
+        attachments: _attachments,
       );
 
-      if (_attachments.isNotEmpty) {
-        await repository.uploadAttachments(ticket.id, _attachments, user.id);
-      }
+      // if (_attachments.isNotEmpty) {
+      //   await repository.uploadAttachments(ticket.id, _attachments, user.id);
+      // }
 
       if (mounted) {
         ref.invalidate(ticketListProvider);

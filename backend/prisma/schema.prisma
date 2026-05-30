@@ -47,8 +47,8 @@ enum NotificationType {
 }
 
 enum AttachmentSource {
-  UPLOAD   // dari file picker
-  CAMERA   // dari kamera langsung
+  UPLOAD // dari file picker
+  CAMERA // dari kamera langsung
 }
 
 // ─────────────────────────────────────────
@@ -56,41 +56,53 @@ enum AttachmentSource {
 // ─────────────────────────────────────────
 
 model User {
-  id             String    @id @default(uuid())
-  supabaseUid    String?   @unique
-  username       String    @unique
-  email          String    @unique
-  passwordHash   String
-  role           UserRole  @default(USER)
-  fullName       String
-  avatarUrl      String?
-  phone          String?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  lastLoginAt    DateTime?
+  id           String    @id @default(uuid())
+  supabaseUid  String?   @unique
+  username     String    @unique
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(USER)
+  fullName     String
+  avatarUrl    String?
+  phone        String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
 
   // Auth
   passwordResetTokens PasswordResetToken[]
 
   // Ticket relations
-  ticketsCreated    Ticket[]       @relation("TicketCreator")
-  ticketsAssignedTo Ticket[]       @relation("TicketAssignee")
+  ticketsCreated    Ticket[]        @relation("TicketCreator")
+  ticketsAssignedTo Ticket[]        @relation("TicketAssignee")
   comments          TicketComment[]
   ticketHistories   TicketHistory[]
   notifications     Notification[]
+  techSupports      TechSupport[]
 
   @@map("users")
 }
 
-model PasswordResetToken {
+model TechSupport {
   id        String   @id @default(uuid())
-  token     String   @unique
-  userId    String
+  userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets   Ticket[] @relation("TechSupportTickets")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tech_support")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@map("password_reset_tokens")
 }
@@ -115,33 +127,36 @@ model TicketCategory {
 // ─────────────────────────────────────────
 
 model Ticket {
-  id          String         @id @default(uuid())
-  title       String
-  description String
-  status      TicketStatus   @default(OPEN)
-  priority    TicketPriority @default(MEDIUM)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  resolvedAt  DateTime?
-  closedAt    DateTime?
+  id            String         @id @default(uuid())
+  title         String
+  description   String
+  status        TicketStatus   @default(OPEN)
+  priority      TicketPriority @default(MEDIUM)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  resolvedAt    DateTime?
+  closedAt      DateTime?
 
   // Relasi user
-  creatorId   String
-  creator     User           @relation("TicketCreator", fields: [creatorId], references: [id])
+  creatorId String
+  creator   User   @relation("TicketCreator", fields: [creatorId], references: [id])
 
   // Assign ke helpdesk/admin (FR-006)
-  assigneeId  String?
-  assignee    User?          @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  assigneeId String?
+  assignee   User?   @relation("TicketAssignee", fields: [assigneeId], references: [id])
 
   // Kategori
-  categoryId  String?
-  category    TicketCategory? @relation(fields: [categoryId], references: [id])
+  categoryId String?
+  category   TicketCategory? @relation(fields: [categoryId], references: [id])
 
   // Relasi lainnya
-  attachments Attachment[]
-  comments    TicketComment[]
-  histories   TicketHistory[]
+  attachments   Attachment[]
+  comments      TicketComment[]
+  histories     TicketHistory[]
   notifications Notification[]
+
+  techSupport   TechSupport?    @relation("TechSupportTickets", fields: [techSupportId], references: [id])
+  techSupportId String?
 
   @@map("tickets")
 }
@@ -151,15 +166,15 @@ model Ticket {
 // ─────────────────────────────────────────
 
 model Attachment {
-  id        String           @id @default(uuid())
-  ticketId  String
-  ticket    Ticket           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  fileName  String
-  fileUrl   String
-  fileSize  Int              // bytes
-  mimeType  String
-  source    AttachmentSource @default(UPLOAD)
-  uploadedAt DateTime        @default(now())
+  id         String           @id @default(uuid())
+  ticketId   String
+  ticket     Ticket           @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fileName   String
+  fileUrl    String
+  fileSize   Int // bytes
+  mimeType   String
+  source     AttachmentSource @default(UPLOAD)
+  uploadedAt DateTime         @default(now())
 
   @@map("attachments")
 }
@@ -186,19 +201,19 @@ model TicketComment {
 // ─────────────────────────────────────────
 
 model TicketHistory {
-  id          String       @id @default(uuid())
+  id          String @id @default(uuid())
   ticketId    String
-  ticket      Ticket       @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket      Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   changedById String
-  changedBy   User         @relation(fields: [changedById], references: [id])
+  changedBy   User   @relation(fields: [changedById], references: [id])
 
   // Apa yang berubah
-  field       String       // misal: "status", "assignee", "priority"
-  oldValue    String?
-  newValue    String?
-  note        String?
+  field    String // misal: "status", "assignee", "priority"
+  oldValue String?
+  newValue String?
+  note     String?
 
-  createdAt   DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@map("ticket_histories")
 }
@@ -208,17 +223,17 @@ model TicketHistory {
 // ─────────────────────────────────────────
 
 model Notification {
-  id         String           @id @default(uuid())
-  userId     String
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ticketId   String?
-  ticket     Ticket?          @relation(fields: [ticketId], references: [id], onDelete: SetNull)
-  type       NotificationType
-  title      String
-  body       String
-  isRead     Boolean          @default(false)
-  readAt     DateTime?
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketId  String?
+  ticket    Ticket?          @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  type      NotificationType
+  title     String
+  body      String
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
 
   @@map("notifications")
 }
