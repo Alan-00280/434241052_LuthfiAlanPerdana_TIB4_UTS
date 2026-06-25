@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Wrapper HTTP client sederhana untuk komunikasi dengan REST API backend.
@@ -14,6 +15,8 @@ class ApiClient {
       dotenv.env['API_URL'] ?? 'http://localhost:3000';
 
   String? _accessToken;
+
+  VoidCallback? onUnauthorized;
 
   /// Set token setelah login. Dipanggil dari AuthController.
   void setToken(String? token) {
@@ -275,7 +278,12 @@ class ApiClient {
       if (body.isEmpty) return null;
       return jsonDecode(body);
     } else {
-      // Coba parse error message dari body
+      if (response.statusCode == 401) {
+        if (onUnauthorized != null) {
+          onUnauthorized!();
+        }
+      }
+
       String message = 'Request failed [${response.statusCode}]';
       try {
         final json = jsonDecode(body);

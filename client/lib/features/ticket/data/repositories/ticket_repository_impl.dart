@@ -51,10 +51,11 @@ class TicketRepositoryImpl implements TicketRepository {
   }
 
   @override
-  Future<void> assignTicket(String id, String assigneeId, String changedById) async {
+  Future<void> assignTicket(String id, String assigneeId, String changedById, String techSupportId) async {
     final body = {
       'assigneeId': assigneeId,
       'changedById': changedById,
+      'techSupportId': techSupportId
     };
     await ApiClient.instance.patch('/api/tickets/$id/assign', body: body);
   }

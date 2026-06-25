@@ -52,7 +52,7 @@ abstract class TicketRepository {
   Future<void> updateStatus(String id, TicketStatus status, String changedById, {String? note});
 
   /// PATCH /api/tickets/:id/assign
-  Future<void> assignTicket(String id, String assigneeId, String changedById);
+  Future<void> assignTicket(String id, String assigneeId, String changedById, String techSupportId);
 
   /// DELETE /api/tickets/:id
   Future<void> deleteTicket(String id);

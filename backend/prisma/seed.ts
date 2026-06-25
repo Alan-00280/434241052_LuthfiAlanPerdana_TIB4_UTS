@@ -4,14 +4,20 @@ import { PrismaClient } from "../src/generated/prisma/client.js";
 import {
 	AttachmentSource,
 	NotificationType,
+	TechSupportSpecialty,
 	TicketPriority,
 	TicketStatus,
 	UserRole,
 } from "../src/generated/prisma/enums.js";
 import { supabase } from "../src/lib/supabase.js";
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+	throw new Error("DATABASE_URL environment variable is required");
+}
+
 const adapter = new PrismaPg({
-	connectionString: process.env.DATABASE_URL!,
+	connectionString,
 });
 
 const prisma = new PrismaClient({
@@ -30,6 +36,7 @@ async function createUser(data: {
 	fullName: string;
 	phone: string;
 	role: UserRole;
+	speciality?: TechSupportSpecialty;
 }) {
 	// 1. Buat di Supabase Auth Jika role nya bukan Techsupport
 	let authData = null;
@@ -48,8 +55,7 @@ async function createUser(data: {
 	const supabaseUid = authData?.user?.id ?? null;
 
 	// 2. Upsert ke PostgreSQL dengan supabaseUid menyesuaikan role
-	// if (data.role !== UserRole.TECHSUPPORT) {
-	return prisma.user.upsert({
+	const user = await prisma.user.upsert({
 		where: { email: data.email },
 		update: { supabaseUid },
 		create: {
@@ -62,9 +68,21 @@ async function createUser(data: {
 			phone: data.phone,
 		},
 	});
-	// } else {
-	// 	return prisma.tech
-	// }
+
+	if (data.role === UserRole.TECHSUPPORT) {
+		const techUser = await prisma.techSupport.upsert({
+			where: { userId: user.id },
+			update: {},
+			create: {
+				userId: user.id,
+				speciality: data.speciality ?? TechSupportSpecialty.SOFTWARE,
+			},
+		});
+
+		user.id = techUser.id;
+	}
+
+	return user;
 }
 
 async function main() {
@@ -105,7 +123,58 @@ async function main() {
 		role: UserRole.HELPDESK,
 	});
 
-	// 3. Regular Users
+	// 3. Tech Support
+	const techsupport1 = await createUser({
+		email: "techsupport1@techsuport.com",
+		password: "11223344",
+		username: "techsuport1",
+		fullName: "techsuport1",
+		phone: "000000000000",
+		role: UserRole.TECHSUPPORT,
+		speciality: TechSupportSpecialty.INFRASTRUCTURE,
+	});
+
+	const techsupport2 = await createUser({
+		email: "techsupport2@techsupport.com",
+		password: "11223344",
+		username: "techsupport_network",
+		fullName: "Ferry Network Admin",
+		phone: "081234567891",
+		role: UserRole.TECHSUPPORT,
+		speciality: TechSupportSpecialty.NETWORK,
+	});
+
+	const techsupport3 = await createUser({
+		email: "techsupport3@techsupport.com",
+		password: "11223344",
+		username: "techsupport_hardware",
+		fullName: "Budi Hardware Specialist",
+		phone: "081234567892",
+		role: UserRole.TECHSUPPORT,
+		speciality: TechSupportSpecialty.HARDWARE,
+	});
+
+	const techsupport4 = await createUser({
+		email: "techsupport4@techsupport.com",
+		password: "11223344",
+		username: "techsupport_software",
+		fullName: "Siti Software Support",
+		phone: "081234567893",
+		role: UserRole.TECHSUPPORT,
+		speciality: TechSupportSpecialty.SOFTWARE,
+	});
+
+	const techsupport5 = await createUser({
+		email: "techsupport5@techsupport.com",
+		password: "11223344",
+		username: "techsupport_auth",
+		fullName: "Andi Account Security",
+		phone: "081234567894",
+		role: UserRole.TECHSUPPORT,
+		speciality: TechSupportSpecialty.ACCOUNT_AUTH,
+	});
+
+	// 4. Regular Users
 	const user1 = await createUser({
 		email: "user1@example.com",
 		password: "User@123",
@@ -196,7 +265,11 @@ async function main() {
 
 	console.log("🎫 Seeding tickets...");
 
-	// Ticket 1 — OPEN, belum di-assign
+	// =========================================================================
+	// 3 TIKET STATUS: OPEN (Belum di-assign ke Helpdesk maupun Tech Support)
+	// =========================================================================
+
+	// Ticket 1 — OPEN
 	const ticket1 = await prisma.ticket.create({
 		data: {
 			title: "Tidak bisa terhubung ke WiFi kantor",
@@ -209,8 +282,38 @@ async function main() {
 		},
 	});
 
-	// Ticket 2 — IN_PROGRESS, sudah di-assign ke helpdesk1
+	// Ticket 2 — OPEN
 	const ticket2 = await prisma.ticket.create({
+		data: {
+			title: "Keyboard Macbook macet beberapa tombol",
+			description:
+				"Tombol spacebar dan huruf 'E' di laptop dinas saya keras sekali saat ditekan dan sering tidak merespons. Mohon bantuan pengecekan atau penggantian unit.",
+			status: TicketStatus.OPEN,
+			priority: TicketPriority.MEDIUM,
+			creatorId: user2.id,
+			categoryId: catHardware.id,
+		},
+	});
+
+	// Ticket 3 — OPEN
+	const ticket3 = await prisma.ticket.create({
+		data: {
+			title: "Request instalasi Adobe Photoshop terbaru",
+			description:
+				"Saya membutuhkan aplikasi Adobe Photoshop berlisensi resmi untuk kebutuhan editing materi campaign media sosial divisi marketing.",
+			status: TicketStatus.OPEN,
+			priority: TicketPriority.LOW,
+			creatorId: user3.id,
+			categoryId: catSoftware.id,
+		},
+	});
+
+	// =========================================================================
+	// 1 TIKET STATUS: IN_PROGRESS (Sudah di-assign ke Helpdesk & Tech Support)
+	// =========================================================================
+
+	// Ticket 4 — IN_PROGRESS
+	const ticket4 = await prisma.ticket.create({
 		data: {
 			title: "Printer tidak bisa mencetak dokumen",
 			description:
@@ -218,28 +321,18 @@ async function main() {
 			status: TicketStatus.IN_PROGRESS,
 			priority: TicketPriority.MEDIUM,
 			creatorId: user2.id,
-			assigneeId: helpdesk1.id,
+			assigneeId: helpdesk1.id, // Assigned ke Helpdesk
+			techSupportId: techsupport3.id, // Diteruskan ke TechSupport (Hardware Specialist)
 			categoryId: catHardware.id,
 		},
 	});
 
-	// Ticket 3 — RESOLVED
-	const ticket3 = await prisma.ticket.create({
-		data: {
-			title: "Lupa password akun email kantor",
-			description:
-				"Saya tidak bisa login ke email kantor karena lupa password. Mohon bantuan untuk reset password.",
-			status: TicketStatus.RESOLVED,
-			priority: TicketPriority.LOW,
-			creatorId: user3.id,
-			assigneeId: helpdesk2.id,
-			categoryId: catAkun.id,
-			resolvedAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 jam lalu
-		},
-	});
+	// =========================================================================
+	// 2 TIKET STATUS: PENDING (Tertunda menunggu verifikasi/part/proses lanjut)
+	// =========================================================================
 
-	// Ticket 4 — PENDING, sudah di-assign ke helpdesk2
-	const ticket4 = await prisma.ticket.create({
+	// Ticket 5 — PENDING
+	const ticket5 = await prisma.ticket.create({
 		data: {
 			title: "Aplikasi ERP crash saat buka laporan bulanan",
 			description:
@@ -247,24 +340,62 @@ async function main() {
 			status: TicketStatus.PENDING,
 			priority: TicketPriority.CRITICAL,
 			creatorId: user1.id,
-			assigneeId: helpdesk2.id,
+			assigneeId: helpdesk2.id, // Assigned ke Helpdesk
+			techSupportId: techsupport4.id, // Diteruskan ke TechSupport (Software Support)
 			categoryId: catSoftware.id,
 		},
 	});
 
-	// Ticket 5 — CLOSED
-	const ticket5 = await prisma.ticket.create({
+	// Ticket 6 — PENDING
+	const ticket6 = await prisma.ticket.create({
+		data: {
+			title: "Internet lantai 3 sangat lambat dan sering RTO",
+			description:
+				"Koneksi internet via kabel LAN maupun WiFi di area kerja lantai 3 drop parah sejak siang ini. Sering Request Time Out (RTO) saat meeting online.",
+			status: TicketStatus.PENDING,
+			priority: TicketPriority.HIGH,
+			creatorId: user3.id,
+			assigneeId: helpdesk1.id, // Assigned ke Helpdesk
+			techSupportId: techsupport2.id, // Diteruskan ke TechSupport (Network Admin)
+			categoryId: catJaringan.id,
+		},
+	});
+
+	// =========================================================================
+	// 2 TIKET STATUS: CLOSED (Selesai diproses dan sudah ditutup riwayatnya)
+	// =========================================================================
+
+	// Ticket 7 — CLOSED
+	const ticket7 = await prisma.ticket.create({
+		data: {
+			title: "Lupa password akun email kantor",
+			description:
+				"Saya tidak bisa login ke email kantor karena lupa password. Mohon bantuan untuk reset password.",
+			status: TicketStatus.CLOSED,
+			priority: TicketPriority.LOW,
+			creatorId: user3.id,
+			assigneeId: helpdesk2.id, // Assigned ke Helpdesk
+			techSupportId: techsupport5.id, // Selesai oleh TechSupport (Account Security)
+			categoryId: catAkun.id,
+			resolvedAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // Selesai 2 jam lalu
+			closedAt: new Date(Date.now() - 1000 * 60 * 60 * 1), // Ditutup 1 jam lalu
+		},
+	});
+
+	// Ticket 8 — CLOSED
+	const ticket8 = await prisma.ticket.create({
 		data: {
 			title: "Permintaan penambahan akses folder shared drive",
 			description:
-				'Saya membutuhkan akses ke folder "Dokumen Proyek 2024" di shared drive untuk keperluan pekerjaan tim.',
+				'Saya membutuhkan akses ke folder "Dokumen Proyek 2026" di shared drive untuk keperluan pekerjaan tim.',
 			status: TicketStatus.CLOSED,
 			priority: TicketPriority.LOW,
 			creatorId: user2.id,
-			assigneeId: helpdesk1.id,
+			assigneeId: helpdesk1.id, // Assigned ke Helpdesk
+			techSupportId: techsupport1.id, // Selesai oleh TechSupport (Infrastructure)
 			categoryId: catAkun.id,
-			resolvedAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 hari lalu
-			closedAt: new Date(Date.now() - 1000 * 60 * 60 * 20), // 20 jam lalu
+			resolvedAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // Selesai 1 hari lalu
+			closedAt: new Date(Date.now() - 1000 * 60 * 60 * 20), // Ditutup 20 jam lalu
 		},
 	});
 
@@ -382,26 +513,39 @@ async function main() {
 
 	await prisma.ticketHistory.createMany({
 		data: [
-			// Ticket 2: dibuat → assign → in progress
+			// =========================================================================
+			// TIKET 4 (IN_PROGRESS) — Macam-macam langkah: assign helpdesk -> assign tech support -> in progress
+			// =========================================================================
 			{
-				ticketId: ticket2.id,
+				ticketId: ticket4.id,
 				changedById: admin.id,
 				field: "assignee",
 				oldValue: null,
 				newValue: helpdesk1.fullName,
-				note: "Tiket di-assign ke helpdesk",
+				note: "Tiket di-assign ke helpdesk untuk triage awal",
 			},
 			{
-				ticketId: ticket2.id,
+				ticketId: ticket4.id,
+				changedById: helpdesk1.id,
+				field: "techSupport",
+				oldValue: null,
+				newValue: "Hardware Specialist",
+				note: "Kendala fisik printer diteruskan ke tim Tech Support Hardware",
+			},
+			{
+				ticketId: ticket4.id,
 				changedById: helpdesk1.id,
 				field: "status",
 				oldValue: TicketStatus.OPEN,
 				newValue: TicketStatus.IN_PROGRESS,
-				note: "Helpdesk mulai menangani tiket",
+				note: "Tim lapangan mulai mengecek unit printer di ruang administrasi",
 			},
-			// Ticket 3: assign → in progress → resolved
+
+			// =========================================================================
+			// TIKET 5 (PENDING) — Alur: assign helpdesk -> assign tech support -> pending (investigasi crash)
+			// =========================================================================
 			{
-				ticketId: ticket3.id,
+				ticketId: ticket5.id,
 				changedById: admin.id,
 				field: "assignee",
 				oldValue: null,
@@ -409,49 +553,27 @@ async function main() {
 				note: "Tiket di-assign ke helpdesk",
 			},
 			{
-				ticketId: ticket3.id,
+				ticketId: ticket5.id,
 				changedById: helpdesk2.id,
-				field: "status",
-				oldValue: TicketStatus.OPEN,
-				newValue: TicketStatus.IN_PROGRESS,
-				note: "Sedang proses reset password",
-			},
-			{
-				ticketId: ticket3.id,
-				changedById: helpdesk2.id,
-				field: "status",
-				oldValue: TicketStatus.IN_PROGRESS,
-				newValue: TicketStatus.RESOLVED,
-				note: "Password berhasil direset dan dikonfirmasi user",
-			},
-			// Ticket 4: assign → pending
-			{
-				ticketId: ticket4.id,
-				changedById: admin.id,
-				field: "assignee",
+				field: "techSupport",
 				oldValue: null,
-				newValue: helpdesk2.fullName,
-				note: "Tiket di-assign ke helpdesk",
+				newValue: "Software Support",
+				note: "Masalah crash aplikasi ERP dialihkan ke spesialis software",
 			},
 			{
-				ticketId: ticket4.id,
+				ticketId: ticket5.id,
 				changedById: helpdesk2.id,
 				field: "status",
 				oldValue: TicketStatus.OPEN,
-				newValue: TicketStatus.IN_PROGRESS,
-				note: "Investigasi dimulai",
-			},
-			{
-				ticketId: ticket4.id,
-				changedById: helpdesk2.id,
-				field: "status",
-				oldValue: TicketStatus.IN_PROGRESS,
 				newValue: TicketStatus.PENDING,
-				note: "Menunggu feedback dari tim developer",
+				note: "Status ditangguhkan sementara, menunggu log file dari tim developer pusat",
 			},
-			// Ticket 5: assign → in progress → resolved → closed
+
+			// =========================================================================
+			// TIKET 6 (PENDING) — Alur: assign helpdesk -> assign tech support -> pending (nunggu part/vendor)
+			// =========================================================================
 			{
-				ticketId: ticket5.id,
+				ticketId: ticket6.id,
 				changedById: admin.id,
 				field: "assignee",
 				oldValue: null,
@@ -459,20 +581,76 @@ async function main() {
 				note: "Tiket di-assign ke helpdesk",
 			},
 			{
-				ticketId: ticket5.id,
+				ticketId: ticket6.id,
+				changedById: helpdesk1.id,
+				field: "techSupport",
+				oldValue: null,
+				newValue: "Network Admin",
+				note: "Laporan RTO jaringan lantai 3 dialihkan ke tim network",
+			},
+			{
+				ticketId: ticket6.id,
 				changedById: helpdesk1.id,
 				field: "status",
 				oldValue: TicketStatus.OPEN,
-				newValue: TicketStatus.RESOLVED,
-				note: "Akses folder sudah diberikan",
+				newValue: TicketStatus.PENDING,
+				note: "Pending: Sedang menunggu proses penggantian access point cadangan dari gudang",
+			},
+
+			// =========================================================================
+			// TIKET 7 (CLOSED) — Alur lengkap: assign -> forwarded -> resolved -> closed
+			// =========================================================================
+			{
+				ticketId: ticket7.id,
+				changedById: admin.id,
+				field: "assignee",
+				oldValue: null,
+				newValue: helpdesk2.fullName,
+				note: "Tiket di-assign ke helpdesk",
 			},
 			{
-				ticketId: ticket5.id,
-				changedById: admin.id,
+				ticketId: ticket7.id,
+				changedById: helpdesk2.id,
+				field: "techSupport",
+				oldValue: null,
+				newValue: "Account Security",
+				note: "Diteruskan ke tim Auth & Security untuk keperluan reset email",
+			},
+			{
+				ticketId: ticket7.id,
+				changedById: helpdesk2.id,
 				field: "status",
-				oldValue: TicketStatus.RESOLVED,
+				oldValue: TicketStatus.OPEN,
 				newValue: TicketStatus.CLOSED,
-				note: "Tiket ditutup setelah konfirmasi user",
+				note: "Password baru berhasil di-generate, dikonfirmasi oleh user, dan tiket resmi ditutup",
+			},
+
+			// =========================================================================
+			// TIKET 8 (CLOSED) — Alur lengkap: assign -> forwarded -> closed
+			// =========================================================================
+			{
+				ticketId: ticket8.id,
+				changedById: admin.id,
+				field: "assignee",
+				oldValue: null,
+				newValue: helpdesk1.fullName,
+				note: "Tiket di-assign ke helpdesk",
+			},
+			{
+				ticketId: ticket8.id,
+				changedById: helpdesk1.id,
+				field: "techSupport",
+				oldValue: null,
+				newValue: "Infrastructure",
+				note: "Akses shared drive dikerjakan oleh tim infra",
+			},
+			{
+				ticketId: ticket8.id,
+				changedById: helpdesk1.id,
+				field: "status",
+				oldValue: TicketStatus.OPEN,
+				newValue: TicketStatus.CLOSED,
+				note: "Hak akses folder proyek dirubah dan tiket ditutup otomatis oleh sistem",
 			},
 		],
 	});

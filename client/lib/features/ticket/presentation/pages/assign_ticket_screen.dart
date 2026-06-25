@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/assignee_provider.dart';
+import 'package:helpdesk_ticketing/features/ticket/presentation/providers/tech_support_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_detail_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_list_provider.dart';
 
@@ -18,18 +19,31 @@ class AssignTicketScreen extends ConsumerStatefulWidget {
 class _AssignTicketScreenState extends ConsumerState<AssignTicketScreen> {
   bool _isLoading = false;
 
-  Future<void> _assignTicket(String assigneeId) async {
+  Future<void> _assignTicket(String techSupportId) async {
     final user = ref.read(currentUserProvider);
     if (user == null) return;
 
     setState(() => _isLoading = true);
     try {
       final repository = ref.read(ticketRepositoryProvider);
-      await repository.assignTicket(widget.ticketId, assigneeId, user.id);
+
+      // Alur yang benar:
+      // widget.ticketId -> ID Tiket
+      // user.id         -> assigneeId (Helpdesk yang sedang login)
+      // user.id         -> changedById (Orang yang melakukan perubahan)
+      // techSupportId   -> techSupportId (Teknisi yang dipilih dari list)
+      await repository.assignTicket(
+        widget.ticketId,
+        user.id, // Sebagai assigneeId
+        user.id, // Sebagai changedById
+        techSupportId,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tiket berhasil di-assign.')),
+          const SnackBar(
+            content: Text('Tiket berhasil di-assign ke Tech Support.'),
+          ),
         );
         ref.invalidate(ticketDetailProvider(widget.ticketId));
         ref.invalidate(ticketListProvider);
@@ -37,9 +51,9 @@ class _AssignTicketScreenState extends ConsumerState<AssignTicketScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal assign tiket: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal assign tiket: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -49,47 +63,47 @@ class _AssignTicketScreenState extends ConsumerState<AssignTicketScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final assigneesAsync = ref.watch(assigneeListProvider);
+    final assigneesAsync = ref.watch(techSupportListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pilih Assignee'),
-      ),
+      appBar: AppBar(title: const Text('Pilih Tech Support')),
       body: assigneesAsync.when(
-        data: (assignees) {
-          if (assignees.isEmpty) {
-            return const Center(child: Text('Tidak ada assignee tersedia.'));
+        data: (techSupportList) {
+          if (techSupportList.isEmpty) {
+            return const Center(
+              child: Text('Tidak ada tech support tersedia.'),
+            );
           }
           return ListView.separated(
-            itemCount: assignees.length,
+            itemCount: techSupportList.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final assignee = assignees[index];
+              final techSupport = techSupportList[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundImage: assignee.avatarUrl != null
-                      ? NetworkImage(assignee.avatarUrl!)
+                  backgroundImage: techSupport.avatarUrl != null
+                      ? NetworkImage(techSupport.avatarUrl!)
                       : null,
-                  child: assignee.avatarUrl == null
+                  child: techSupport.avatarUrl == null
                       ? const Icon(Icons.person)
                       : null,
                 ),
-                title: Text(assignee.fullName),
+                title: Text(techSupport.fullName),
+                subtitle: Text(
+                  techSupport.speciality ?? 'Umum / No Speciality',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => _assignTicket(assignee.id),
+                onTap: _isLoading ? null : () => _assignTicket(techSupport.id),
               );
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Terjadi kesalahan: $error'),
-        ),
+        error: (e, _) => Center(child: Text('Gagal memuat data: $e')),
       ),
     );
   }

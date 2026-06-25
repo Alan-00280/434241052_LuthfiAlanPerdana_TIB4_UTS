@@ -33,6 +33,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: false,
     redirect: (context, state) {
       final authState = ref.read(authControllerProvider);
+
+      if (authState.hasError) {
+        return AppRoutes.login;
+      }
+
       final isLoading = authState.isLoading;
       if (isLoading) return null;
 

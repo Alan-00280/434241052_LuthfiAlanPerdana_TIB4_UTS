@@ -15,7 +15,9 @@
 			"!**/.envx",
 			"!!client/",
 			"!client",
-			"!!**/*.md"
+			"!!**/*.md",
+			"!!changes/",
+			"!changes"
 		]
 	},
 	"formatter": {

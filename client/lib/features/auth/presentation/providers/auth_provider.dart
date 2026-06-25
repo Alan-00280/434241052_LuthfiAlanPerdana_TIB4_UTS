@@ -28,7 +28,17 @@ class AuthController extends AsyncNotifier<UserEntity?> {
   Future<UserEntity?> build() async {
     _checkAndSyncToken();
     ref.watch(_authSubscriptionProvider);
+
+    ApiClient.instance.onUnauthorized = () {
+      handleUnauthorized();
+    };
+
     return await repo.getCurrentUser();
+  }
+
+  void handleUnauthorized() {
+    Supabase.instance.client.auth.signOut();
+    state = const AsyncData(null); 
   }
 
   Future<void> _checkAndSyncToken() async {

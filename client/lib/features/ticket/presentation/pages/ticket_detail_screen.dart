@@ -27,23 +27,28 @@ class TicketDetailScreen extends ConsumerWidget {
         title: 'Detail Tiket',
         actions: [
           if (user?.role.isAdmin ?? false)
-            ticketAsync.whenData((ticket) => IconButton(
-                  icon: const Icon(Icons.edit_note, color: Colors.blue),
-                  tooltip: 'Ubah Status',
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => UpdateStatusDialog(
-                        ticketId: ticketId,
-                        initialStatus: ticket.status,
-                        userId: user!.id,
+            ticketAsync
+                    .whenData(
+                      (ticket) => IconButton(
+                        icon: const Icon(Icons.edit_note, color: Colors.blue),
+                        tooltip: 'Ubah Status',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => UpdateStatusDialog(
+                              ticketId: ticketId,
+                              initialStatus: ticket.status,
+                              userId: user!.id,
+                            ),
+                          ).then((_) {
+                            ref.invalidate(ticketDetailProvider(ticketId));
+                            ref.invalidate(ticketListProvider);
+                          });
+                        },
                       ),
-                    ).then((_) {
-                      ref.invalidate(ticketDetailProvider(ticketId));
-                      ref.invalidate(ticketListProvider);
-                    });
-                  },
-                )).value ?? const SizedBox.shrink(),
+                    )
+                    .value ??
+                const SizedBox.shrink(),
         ],
       ),
       floatingActionButton: (user?.role.isAdmin ?? false)
@@ -70,14 +75,17 @@ class TicketDetailScreen extends ConsumerWidget {
                 Text(
                   ticket.title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
@@ -85,12 +93,19 @@ class TicketDetailScreen extends ConsumerWidget {
                       ),
                       child: Text(
                         ticket.status.displayName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
@@ -98,32 +113,45 @@ class TicketDetailScreen extends ConsumerWidget {
                       ),
                       child: Text(
                         ticket.priority.displayName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.red),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red,
+                        ),
                       ),
                     ),
                     if (ticket.category != null) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.grey.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey.withOpacity(0.5)),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.5),
+                          ),
                         ),
                         child: Text(
                           ticket.category!.name,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
-                    ]
+                    ],
                   ],
                 ),
                 const Divider(height: 32),
                 Text(
                   'Deskripsi',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(ticket.description),
@@ -134,15 +162,16 @@ class TicketDetailScreen extends ConsumerWidget {
                     Text(
                       'Lampiran',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     OutlinedButton.icon(
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
-                          builder: (context) => TicketAttachmentsModal(ticketId: ticketId),
+                          builder: (context) =>
+                              TicketAttachmentsModal(ticketId: ticketId),
                         );
                       },
                       icon: const Icon(Icons.attachment),
@@ -162,12 +191,25 @@ class TicketDetailScreen extends ConsumerWidget {
                   title: const Text('Assignee'),
                   subtitle: Text(ticket.assignee?.fullName ?? 'Belum ada'),
                 ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.amber,
+                    child: Icon(Icons.build, color: Colors.white),
+                  ),
+                  title: const Text('Tech Support'),
+                  subtitle: Text(
+                    ticket.techSupport != null
+                        ? '${ticket.techSupport!.fullName} (${ticket.techSupport!.speciality})'
+                        : 'Belum ditugaskan',
+                  ),
+                ),
                 const Divider(height: 32),
                 Text(
                   'Komentar',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TicketCommentsList(ticketId: ticketId),
@@ -181,13 +223,15 @@ class TicketDetailScreen extends ConsumerWidget {
                   ),
                 const Divider(height: 32),
                 Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     title: Text(
                       'Riwayat Perubahan',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     children: [
                       Padding(
@@ -197,16 +241,15 @@ class TicketDetailScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 75)
               ],
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Text('Terjadi kesalahan: $error'),
-        ),
+        error: (error, stack) =>
+            Center(child: Text('Terjadi kesalahan: $error')),
       ),
     );
   }
 }
-

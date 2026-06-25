@@ -8,6 +8,11 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator zod {
+  provider = "zod-prisma-types"
+  output   = "./zod"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -20,6 +25,7 @@ enum UserRole {
   USER
   HELPDESK
   ADMIN
+  TECHSUPPORT
 }
 
 enum TicketStatus {
@@ -28,6 +34,14 @@ enum TicketStatus {
   PENDING
   RESOLVED
   CLOSED
+}
+
+enum TechSupportSpecialty {
+  NETWORK      // Masalah jaringan, internet, wifi
+  HARDWARE     // Kerusakan PC, printer, laptop
+  SOFTWARE     // Masalah OS, aplikasi, instalasi
+  ACCOUNT_AUTH // Masalah login, reset password, hak akses
+  INFRASTRUCTURE // Masalah server, cloud, database
 }
 
 enum TicketPriority {
@@ -91,6 +105,8 @@ model TechSupport {
   tickets   Ticket[] @relation("TechSupportTickets")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  speciality TechSupportSpecialty @default(SOFTWARE)
 
   @@map("tech_support")
 }

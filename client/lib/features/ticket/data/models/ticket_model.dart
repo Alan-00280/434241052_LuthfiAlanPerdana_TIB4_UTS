@@ -16,11 +16,13 @@ class TicketModel extends TicketEntity {
     required super.creatorId,
     super.assigneeId,
     super.categoryId,
+    super.techSupportId, // Tambahkan super parameter ke entitas
     super.creator,
     super.assignee,
     super.category,
     super.attachments,
     super.commentCount,
+    super.techSupport,
   });
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +55,29 @@ class TicketModel extends TicketEntity {
       category = TicketCategoryRef(
         id: cat['id'] as String,
         name: cat['name'] as String? ?? '',
+      );
+    }
+
+    // Parse Tech Support
+    TicketTechSupportRef? techSupport;
+    if (json['techSupport'] != null) {
+      final ts = json['techSupport'] as Map<String, dynamic>;
+      final tsUser =
+          ts['user']
+              as Map<
+                String,
+                dynamic
+              >?; // Membaca nested object 'user' dari Hono
+
+      techSupport = TicketTechSupportRef(
+        id: ts['id'] as String,
+        speciality:
+            ts['speciality'] as String? ??
+            ts['specialty'] as String? ??
+            'SOFTWARE',
+        fullName: tsUser?['fullName'] as String?,
+        email: tsUser?['email'] as String?,
+        avatarUrl: tsUser?['avatarUrl'] as String?,
       );
     }
 
@@ -92,18 +117,21 @@ class TicketModel extends TicketEntity {
       creatorId: json['creatorId'] as String,
       assigneeId: json['assigneeId'] as String?,
       categoryId: json['categoryId'] as String?,
+      techSupportId: json['techSupportId'] as String?,
       creator: creator,
       assignee: assignee,
       category: category,
       attachments: attachments,
       commentCount: commentCount,
+      techSupport: techSupport, // 3. Alirkan hasil parsing ke model data
     );
   }
 
   Map<String, dynamic> toCreateJson() => {
-        'title': title,
-        'description': description,
-        if (categoryId != null) 'categoryId': categoryId,
-        'priority': priority.value,
-      };
+    'title': title,
+    'description': description,
+    if (categoryId != null) 'categoryId': categoryId,
+    'priority': priority
+        .value, // Ubah ke .name jika enum-mu default atau sesuaikan dengan .value milikmu sebelumnya
+  };
 }

@@ -1,4 +1,10 @@
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import {
+	createCommentRoute,
+	deleteCommentRoute,
+	getCommentsRoute,
+	updateCommentRoute,
+} from "../docs/comment.openapi.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { requireRole } from "../lib/rbac.js";
 
@@ -8,10 +14,11 @@ type ContextWithPrisma = {
 	};
 };
 
-const comments = new Hono<ContextWithPrisma>();
+const comments = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/comments — list komentar tiket (FR-005)
-comments.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
+comments.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.openapi(getCommentsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
@@ -29,7 +36,8 @@ comments.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 });
 
 // POST /tickets/:ticketId/comments — tambah komentar / reply (FR-005)
-comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
+comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.openapi(createCommentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 	const body = await c.req.json();
@@ -104,22 +112,12 @@ comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 		});
 	}
 
-	// await prisma.ticketHistory.create({
-	// 	data: {
-	// 		ticketId,
-	// 		changedById: authorId,
-	// 		field: "comment",
-	// 		oldValue: null,
-	// 		newValue: commentBody,
-	// 		note: "Komentar ditambahkan",
-	// 	},
-	// });
-
 	return c.json({ comment }, 201);
 });
 
 // PUT /tickets/:ticketId/comments/:id — edit komentar
-comments.put("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
+comments.put("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.openapi(updateCommentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -136,7 +134,8 @@ comments.put("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 });
 
 // DELETE /tickets/:ticketId/comments/:id — hapus komentar (author atau ADMIN)
-comments.delete("/:id", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
+comments.delete("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.openapi(deleteCommentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 

@@ -1,4 +1,5 @@
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { registerRoute } from "../docs/auth.openapi.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { supabase } from "../lib/supabase.js";
 
@@ -8,11 +9,11 @@ type ContextWithPrisma = {
 	};
 };
 
-const auth = new Hono<ContextWithPrisma>();
+const auth = new OpenAPIHono<ContextWithPrisma>();
 
 // POST / — Registrasi user baru
 // Route ini tidak pakai requireRole karena diakses oleh user anonim saat daftar
-auth.post("/", async (c) => {
+auth.openapi(registerRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 	const { email, password, username, fullName, phone } = body;
@@ -69,7 +70,7 @@ auth.post("/", async (c) => {
 			},
 			201,
 		);
-	} catch (error: any) {
+	} catch (error: unknown) {
 		// Jika error terjadi di Prisma setelah user terbuat di Supabase,
 		// idealnya kamu menghapus user di Supabase (rollback), tapi untuk tugas kuliah
 		// pengecekan catch sederhana ini sudah cukup.

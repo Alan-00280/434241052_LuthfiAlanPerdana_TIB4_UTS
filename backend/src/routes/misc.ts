@@ -1,12 +1,21 @@
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import {
+	createAttachmentRoute,
+	createCategoryRoute,
+	deleteAttachmentRoute,
+	deleteCategoryRoute,
+	getAttachmentsRoute,
+	getCategoriesRoute,
+	getHistoriesRoute,
+	getNotificationsRoute,
+	readAllNotificationsRoute,
+	readNotificationRoute,
+	updateCategoryRoute,
+} from "../docs/misc.openapi.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { uploadAttachments } from "../lib/attachment.js";
 import { requireRole } from "../lib/rbac.js";
 import { supabase } from "../lib/supabase.js";
-
-// ─────────────────────────────────────────
-// ATTACHMENTS
-// ─────────────────────────────────────────
 
 type ContextWithPrisma = {
 	Variables: {
@@ -14,12 +23,15 @@ type ContextWithPrisma = {
 	};
 };
 
-export const attachments = new Hono<ContextWithPrisma>();
+// ─────────────────────────────────────────
+// ATTACHMENTS
+// ─────────────────────────────────────────
+
+export const attachments = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/attachments — list attachment tiket
-attachments.get("/", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+attachments.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+attachments.openapi(getAttachmentsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
@@ -32,7 +44,8 @@ attachments.get("/", async (c) => {
 });
 
 // POST /tickets/:ticketId/attachments — tambah attachment (FR-005)
-attachments.post("/", requireRole("USER"), async (c) => {
+attachments.post("/", requireRole("USER"));
+attachments.openapi(createAttachmentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 	const formData = await c.req.formData();
@@ -70,7 +83,7 @@ attachments.post("/", requireRole("USER"), async (c) => {
 			ticketId,
 		});
 
-		const attachments = await prisma.attachment.createMany({
+		const attachmentsData = await prisma.attachment.createMany({
 			data: uploadedFiles,
 		});
 
@@ -81,7 +94,7 @@ attachments.post("/", requireRole("USER"), async (c) => {
 				changedById,
 				field: "add_attachment",
 				oldValue: currentAttch.length.toString(),
-				newValue: attachments.count.toString(),
+				newValue: attachmentsData.count.toString(),
 				note: `Menambah Attachments`,
 			},
 		});
@@ -89,19 +102,21 @@ attachments.post("/", requireRole("USER"), async (c) => {
 		return c.json(
 			{
 				message: "Attachment berhasil diupload",
-				count: attachments.count,
+				count: attachmentsData.count,
 			},
 			201,
 		);
-	} catch (err: any) {
-		return c.json({ error: err.message }, 500);
+	} catch (err: unknown) {
+		return c.json(
+			{ error: err instanceof Error ? err.message : String(err) },
+			500,
+		);
 	}
 });
 
 // DELETE /tickets/:ticketId/attachments/:id — hapus attachment
-attachments.delete("/:id", async (c) => {
-	requireRole("USER");
-
+attachments.delete("/:id", requireRole("USER"));
+attachments.openapi(deleteAttachmentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -151,12 +166,11 @@ attachments.delete("/:id", async (c) => {
 // NOTIFICATIONS
 // ─────────────────────────────────────────
 
-export const notifications = new Hono<ContextWithPrisma>();
+export const notifications = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /notifications?userId= — list notifikasi user (FR-007)
-notifications.get("/", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+notifications.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+notifications.openapi(getNotificationsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	let userId = c.req.query("userId");
 	const supaId = c.req.query("supaId");
@@ -199,9 +213,8 @@ notifications.get("/", async (c) => {
 });
 
 // PATCH /notifications/:id/read — tandai satu notifikasi sudah dibaca (FR-007)
-notifications.patch("/:id/read", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+notifications.patch("/:id/read", requireRole("ADMIN", "HELPDESK", "USER"));
+notifications.openapi(readNotificationRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -214,9 +227,8 @@ notifications.patch("/:id/read", async (c) => {
 });
 
 // PATCH /notifications/read-all — tandai semua notifikasi dibaca
-notifications.patch("/read-all", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+notifications.patch("/read-all", requireRole("ADMIN", "HELPDESK", "USER"));
+notifications.openapi(readAllNotificationsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 	const { userId } = body;
@@ -235,12 +247,11 @@ notifications.patch("/read-all", async (c) => {
 // TICKET CATEGORIES
 // ─────────────────────────────────────────
 
-export const categories = new Hono<ContextWithPrisma>();
+export const categories = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /categories — list semua kategori
-categories.get("/", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+categories.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+categories.openapi(getCategoriesRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const data = await prisma.ticketCategory.findMany({
 		orderBy: { name: "asc" },
@@ -249,9 +260,8 @@ categories.get("/", async (c) => {
 });
 
 // POST /categories — buat kategori baru (admin)
-categories.post("/", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+categories.post("/", requireRole("ADMIN", "HELPDESK", "USER"));
+categories.openapi(createCategoryRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const body = await c.req.json();
 
@@ -266,9 +276,8 @@ categories.post("/", async (c) => {
 });
 
 // PUT /categories/:id — update kategori
-categories.put("/:id", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+categories.put("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
+categories.openapi(updateCategoryRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 	const body = await c.req.json();
@@ -282,9 +291,8 @@ categories.put("/:id", async (c) => {
 });
 
 // DELETE /categories/:id — hapus kategori
-categories.delete("/:id", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+categories.delete("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
+categories.openapi(deleteCategoryRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
@@ -296,12 +304,11 @@ categories.delete("/:id", async (c) => {
 // TICKET HISTORY (tracking FR-010, FR-011)
 // ─────────────────────────────────────────
 
-export const histories = new Hono<ContextWithPrisma>();
+export const histories = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/histories — riwayat lengkap tiket
-histories.get("/", async (c) => {
-	requireRole("ADMIN", "HELPDESK", "USER");
-
+histories.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+histories.openapi(getHistoriesRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
