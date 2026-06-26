@@ -54,3 +54,4 @@ next-env.d.ts
 
 keys
 tree.txt
+backend/prisma/seed.ts

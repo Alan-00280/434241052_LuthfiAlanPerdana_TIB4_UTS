@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/providers/profile_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:helpdesk_ticketing/core/router/route_names.dart';
 import 'package:helpdesk_ticketing/core/theme/app_colors.dart';
 
 import 'package:helpdesk_ticketing/core/widgets/custom_app_bar.dart';
@@ -197,6 +199,12 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             icon: const Icon(Icons.edit),
                             label: const Text('Ubah Profil'),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () => context.push(AppRoutes.resetPassword),
+                            icon: const Icon(Icons.lock_reset),
+                            label: const Text('Reset Password'),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(

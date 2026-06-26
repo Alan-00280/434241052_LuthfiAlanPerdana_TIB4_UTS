@@ -13,6 +13,7 @@ import 'package:helpdesk_ticketing/features/ticket/presentation/pages/ticket_det
 import 'package:helpdesk_ticketing/features/ticket/presentation/pages/create_ticket_screen.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/pages/assign_ticket_screen.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/profile_screen.dart';
+import 'package:helpdesk_ticketing/features/profile/presentation/pages/reset_password_screen.dart';
 import 'package:helpdesk_ticketing/features/notification/presentation/pages/notification_screen.dart';
 
 /// Provider GoRouter yang reaktif terhadap perubahan auth state.
@@ -126,6 +127,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.createTicket,
         name: AppRoutes.createTicketName,
         builder: (context, state) => const CreateTicketScreen(),
+      ),
+
+      // ── Reset Password (di luar shell) ─────────────────────────────────
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        name: AppRoutes.resetPasswordName,
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
 
       // ── Ticket Detail (di luar shell) ──────────────────────────────────

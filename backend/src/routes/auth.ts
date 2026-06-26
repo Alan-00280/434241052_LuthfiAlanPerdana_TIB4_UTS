@@ -1,5 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { registerRoute } from "../docs/auth.openapi.js";
+import { registerRoute, resetPasswordRoute } from "../docs/auth.openapi.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { supabase } from "../lib/supabase.js";
 
@@ -79,6 +79,42 @@ auth.openapi(registerRoute, async (c) => {
 			{ error: "Gagal menyimpan data user ke database lokal" },
 			500,
 		);
+	}
+});
+
+// POST /reset-password — Reset password user
+auth.openapi(resetPasswordRoute, async (c) => {
+	const body = await c.req.json();
+	const { email, oldPassword, newPassword } = body;
+
+	if (!email || !oldPassword || !newPassword) {
+		return c.json({ error: "Data tidak lengkap" }, 400);
+	}
+
+	try {
+		// 1. Verifikasi password lama dengan signInWithPassword
+		const { error: signInError } = await supabase.auth.signInWithPassword({
+			email,
+			password: oldPassword,
+		});
+
+		if (signInError) {
+			return c.json({ error: "Password lama salah" }, 400);
+		}
+
+		// 2. Update password baru
+		const { error: updateError } = await supabase.auth.updateUser({
+			password: newPassword,
+		});
+
+		if (updateError) {
+			return c.json({ error: updateError.message }, 400);
+		}
+
+		return c.json({ message: "Password berhasil diperbarui" }, 202);
+	} catch (error: unknown) {
+		console.error("Reset Password Error:", error);
+		return c.json({ error: "Terjadi kesalahan internal server" }, 500);
 	}
 });
 

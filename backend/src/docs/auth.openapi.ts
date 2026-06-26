@@ -66,7 +66,68 @@ export const registerRoute = createRoute({
 					}),
 				},
 			},
-			description: "Gagal menyimpan data ke database lokal",
+		},
+	},
+});
+
+export const resetPasswordRoute = createRoute({
+	method: "post",
+	path: "/reset-password",
+	tags: ["Auth"],
+	summary: "Reset user password",
+	description:
+		"Mereset password user dengan memverifikasi password lama menggunakan Supabase Auth.",
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						email: z
+							.string()
+							.email()
+							.openapi({ description: "Alamat email pengguna" }),
+						oldPassword: z
+							.string()
+							.openapi({ description: "Password lama pengguna" }),
+						newPassword: z
+							.string()
+							.min(6)
+							.openapi({ description: "Password baru pengguna (minimal 6 karakter)" }),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		202: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						message: z.string(),
+					}),
+				},
+			},
+			description: "Password berhasil diperbarui",
+		},
+		400: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						error: z.string(),
+					}),
+				},
+			},
+			description: "Password lama salah atau input tidak lengkap",
+		},
+		500: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						error: z.string(),
+					}),
+				},
+			},
+			description: "Terjadi kesalahan internal server",
 		},
 	},
 });
