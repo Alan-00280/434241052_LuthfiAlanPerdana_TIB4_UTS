@@ -50,6 +50,7 @@ dependencies:
   lucide_icons_flutter: ^3.1.13
   flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.7
+  flutter_local_notifications: ^22.0.1
 
 dev_dependencies:
   flutter_test:

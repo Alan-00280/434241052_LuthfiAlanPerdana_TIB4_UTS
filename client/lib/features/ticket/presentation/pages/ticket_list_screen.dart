@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:helpdesk_ticketing/core/enums/ticket_priority.dart';
 import 'package:helpdesk_ticketing/core/enums/ticket_status.dart';
 import 'package:helpdesk_ticketing/core/router/route_names.dart';
 import 'package:helpdesk_ticketing/core/theme/app_colors.dart';
@@ -139,7 +138,6 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
   @override
   Widget build(BuildContext context) {
     final ticketListAsync = ref.watch(ticketListProvider);
-    final notifier = ref.watch(ticketListProvider.notifier);
 
     return Scaffold(
       appBar: const CustomAppBar(

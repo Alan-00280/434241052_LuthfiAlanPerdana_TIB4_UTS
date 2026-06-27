@@ -7,6 +7,14 @@ import {
 } from "../docs/comment.openapi.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { requireRole } from "../lib/rbac.js";
+import { supabase } from "../lib/supabase.js";
+import {
+	selectTicketComments,
+	insertTicketComments,
+	updateTicketComments,
+	deleteTicketComments,
+	insertNotifications,
+} from "../../supabase/repository/index.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -22,17 +30,35 @@ comments.openapi(getCommentsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
 
-	const data = await prisma.ticketComment.findMany({
-		where: { ticketId },
-		include: {
-			author: {
-				select: { id: true, fullName: true, avatarUrl: true, role: true },
-			},
-		},
-		orderBy: { createdAt: "asc" },
-	});
+	try {
+		const commentsData = await selectTicketComments(supabase, { ticketId });
+		if (!commentsData || commentsData.length === 0) {
+			return c.json({ comments: [] });
+		}
 
-	return c.json({ comments: data });
+		// Ambil authorIds unik
+		const authorIds = Array.from(new Set(commentsData.map((c) => c.authorId)));
+
+		// Ambil data user dari Prisma
+		const authors = await prisma.user.findMany({
+			where: { id: { in: authorIds } },
+			select: { id: true, fullName: true, avatarUrl: true, role: true },
+		});
+
+		// Buat map untuk mapping cepat
+		const authorMap = new Map(authors.map((a) => [a.id, a]));
+
+		// Gabungkan data
+		const commentsWithAuthor = commentsData.map((comment) => ({
+			...comment,
+			author: authorMap.get(comment.authorId) || null,
+		}));
+
+		return c.json({ comments: commentsWithAuthor });
+	} catch (err: unknown) {
+		console.error("Get Comments Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // POST /tickets/:ticketId/comments — tambah komentar / reply (FR-005)
@@ -48,7 +74,11 @@ comments.openapi(createCommentRoute, async (c) => {
 		return c.json({ error: "authorId dan body wajib diisi" }, 400);
 	}
 
-	// Ambil ticket + creator + assignee sekaligus
+	if (!ticketId) {
+		return c.json({ error: "Tiket tidak ditemukan" }, 404);
+	}
+
+	// Ambil ticket + creator + assignee sekaligus menggunakan Prisma
 	const ticket = await prisma.ticket.findUnique({
 		where: { id: ticketId },
 		include: {
@@ -60,59 +90,79 @@ comments.openapi(createCommentRoute, async (c) => {
 	if (!ticket) {
 		return c.json({ error: "Tiket tidak ditemukan" }, 404);
 	}
-	if (!ticketId) {
-		return c.json({ error: "Tiket tidak ditemukan" }, 404);
-	}
 
-	// Create comment
-	const comment = await prisma.ticketComment.create({
-		data: {
+	try {
+		// Create comment via Supabase
+		const insertResult = await insertTicketComments(supabase, {
 			ticketId,
 			authorId,
 			body: commentBody,
-		},
-		include: {
-			author: {
-				select: {
-					id: true,
-					fullName: true,
-					avatarUrl: true,
-					role: true,
-				},
-			},
-		},
-	});
-
-	// Ambil nama author sekali saja
-	const author = comment.author;
-
-	// 🔔 Notifikasi ke creator
-	if (ticket.creatorId !== authorId) {
-		await prisma.notification.create({
-			data: {
-				userId: ticket.creatorId,
-				ticketId,
-				type: "TICKET_COMMENT_ADDED",
-				title: "Komentar baru pada tiketmu",
-				body: `${author.fullName} membalas tiket "${ticket.title}"`,
-			},
 		});
-	}
 
-	// 🔔 Notifikasi ke assignee (jika ada & bukan author)
-	if (ticket.assigneeId && ticket.assigneeId !== authorId) {
-		await prisma.notification.create({
-			data: {
-				userId: ticket.assigneeId,
-				ticketId,
-				type: "TICKET_COMMENT_ADDED",
-				title: "Komentar baru pada tiket",
-				body: `${author.fullName} menambahkan komentar pada tiket "${ticket.title}"`,
-			},
+		if (!insertResult || insertResult.length === 0) {
+			return c.json({ error: "Gagal menyimpan komentar" }, 500);
+		}
+
+		const newComment = insertResult[0];
+
+		// Ambil data author dari Prisma
+		const author = await prisma.user.findUnique({
+			where: { id: authorId },
+			select: { id: true, fullName: true, avatarUrl: true, role: true },
 		});
-	}
 
-	return c.json({ comment }, 201);
+		if (author) {
+			// 🔔 Notifikasi ke creator
+			if (ticket.creatorId !== authorId) {
+				await insertNotifications(supabase, {
+					userId: ticket.creatorId,
+					ticketId,
+					type: "TICKET_COMMENT_ADDED",
+					title: "Komentar baru pada tiketmu",
+					body: `${author.fullName} membalas tiket "${ticket.title}"`,
+				});
+			}
+
+			// 🔔 Notifikasi ke assignee (jika ada & bukan author)
+			if (ticket.assigneeId && ticket.assigneeId !== authorId) {
+				await insertNotifications(supabase, {
+					userId: ticket.assigneeId,
+					ticketId,
+					type: "TICKET_COMMENT_ADDED",
+					title: "Komentar baru pada tiket",
+					body: `${author.fullName} menambahkan komentar pada tiket "${ticket.title}"`,
+				});
+			}
+		}
+
+		const responseComment = {
+			...newComment,
+			author: author || null,
+		};
+
+		// Broadcast komentar baru ke channel realtime Supabase
+		const channel = supabase.channel(`ticket_room:${ticketId}`);
+		channel.subscribe(async (status) => {
+			if (status === "SUBSCRIBED") {
+				await channel.send({
+					type: "broadcast",
+					event: "new_comment",
+					payload: { comment: responseComment },
+				});
+				// Beri jeda agar data selesai di-transmit sebelum di-remove
+				setTimeout(() => {
+					supabase.removeChannel(channel);
+				}, 2000);
+			} else {
+				console.log("Realtime status:", status);
+			}
+		});
+
+		return c.json({ comment: responseComment }, 201);
+	} catch (err: unknown) {
+		console.error("Create Comment Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // PUT /tickets/:ticketId/comments/:id — edit komentar
@@ -122,25 +172,42 @@ comments.openapi(updateCommentRoute, async (c) => {
 	const { id } = c.req.param();
 	const body = await c.req.json();
 
-	const comment = await prisma.ticketComment.update({
-		where: { id },
-		data: { body: body.body },
-		include: {
-			author: { select: { id: true, fullName: true } },
-		},
-	});
+	try {
+		const updatedComment = await updateTicketComments(supabase, id, { body: body.body });
+		if (!updatedComment) {
+			return c.json({ error: "Komentar tidak ditemukan" }, 404);
+		}
 
-	return c.json({ comment });
+		// Ambil data author dari Prisma
+		const author = await prisma.user.findUnique({
+			where: { id: updatedComment.authorId },
+			select: { id: true, fullName: true, avatarUrl: true, role: true },
+		});
+
+		return c.json({
+			comment: {
+				...updatedComment,
+				author: author || null,
+			},
+		});
+	} catch (err: unknown) {
+		console.error("Update Comment Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // DELETE /tickets/:ticketId/comments/:id — hapus komentar (author atau ADMIN)
 comments.delete("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
 comments.openapi(deleteCommentRoute, async (c) => {
-	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
-	await prisma.ticketComment.delete({ where: { id } });
-	return c.json({ message: "Komentar berhasil dihapus" });
+	try {
+		await deleteTicketComments(supabase, id);
+		return c.json({ message: "Komentar berhasil dihapus" });
+	} catch (err: unknown) {
+		console.error("Delete Comment Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 export default comments;

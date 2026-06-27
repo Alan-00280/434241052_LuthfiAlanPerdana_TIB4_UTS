@@ -90,9 +90,9 @@ model User {
   // Ticket relations
   ticketsCreated    Ticket[]        @relation("TicketCreator")
   ticketsAssignedTo Ticket[]        @relation("TicketAssignee")
-  comments          TicketComment[]
+  // comments          TicketComment[]
   ticketHistories   TicketHistory[]
-  notifications     Notification[]
+  // notifications     Notification[]
   techSupports      TechSupport[]
 
   @@map("users")
@@ -167,9 +167,9 @@ model Ticket {
 
   // Relasi lainnya
   attachments   Attachment[]
-  comments      TicketComment[]
+  // comments      TicketComment[]
   histories     TicketHistory[]
-  notifications Notification[]
+  // notifications Notification[]
 
   techSupport   TechSupport?    @relation("TechSupportTickets", fields: [techSupportId], references: [id])
   techSupportId String?
@@ -199,18 +199,18 @@ model Attachment {
 // TICKET COMMENT — komentar / reply (FR-005)
 // ─────────────────────────────────────────
 
-model TicketComment {
-  id        String   @id @default(uuid())
-  ticketId  String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  body      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// model TicketComment {
+//   id        String   @id @default(uuid())
+//   ticketId  String
+//   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+//   authorId  String
+//   author    User     @relation(fields: [authorId], references: [id])
+//   body      String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
 
-  @@map("ticket_comments")
-}
+//   @@map("ticket_comments")
+// }
 
 // ─────────────────────────────────────────
 // TICKET HISTORY — riwayat & tracking (FR-010, FR-011)
@@ -238,18 +238,18 @@ model TicketHistory {
 // NOTIFICATION (FR-007)
 // ─────────────────────────────────────────
 
-model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ticketId  String?
-  ticket    Ticket?          @relation(fields: [ticketId], references: [id], onDelete: SetNull)
-  type      NotificationType
-  title     String
-  body      String
-  isRead    Boolean          @default(false)
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
+// model Notification {
+//   id        String           @id @default(uuid())
+//   userId    String
+//   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   ticketId  String?
+//   ticket    Ticket?          @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+//   type      NotificationType
+//   title     String
+//   body      String
+//   isRead    Boolean          @default(false)
+//   readAt    DateTime?
+//   createdAt DateTime         @default(now())
 
-  @@map("notifications")
-}
+//   @@map("notifications")
+// }

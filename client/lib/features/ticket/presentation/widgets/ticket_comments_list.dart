@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_comments_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_list_provider.dart';
+import 'package:helpdesk_ticketing/features/ticket/data/models/comment_model.dart';
 
 class TicketCommentsList extends ConsumerStatefulWidget {
   final String ticketId;
@@ -16,10 +18,58 @@ class TicketCommentsList extends ConsumerStatefulWidget {
 class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
   final _commentController = TextEditingController();
   bool _isSubmitting = false;
+  RealtimeChannel? _realtimeChannel;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToRealtimeComments();
+  }
+
+  void _subscribeToRealtimeComments() {
+    try {
+      final supabaseClient = Supabase.instance.client;
+      final channelName = 'ticket_room:${widget.ticketId}';
+      debugPrint('Realtime: Subscribing to channel: $channelName');
+      
+      _realtimeChannel = supabaseClient.channel(channelName);
+
+      _realtimeChannel!.onBroadcast(
+        event: 'new_comment',
+        callback: (payload) {
+          debugPrint('Realtime: Broadcast payload received: $payload');
+          try {
+            final innerPayload = payload['payload'] as Map<String, dynamic>?;
+            final commentJson = innerPayload?['comment'];
+            if (commentJson != null) {
+              final newComment = CommentModel.fromJson(commentJson);
+              debugPrint('Realtime: Parsed comment: ${newComment.id} - ${newComment.body}');
+              if (mounted) {
+                ref.read(ticketCommentsProvider(widget.ticketId).notifier).addComment(newComment);
+              }
+            } else {
+              debugPrint('Realtime: payload[\'payload\'][\'comment\'] is null!');
+            }
+          } catch (e, stack) {
+            debugPrint('Realtime: Error parsing comment from broadcast: $e\n$stack');
+          }
+        },
+      );
+
+      _realtimeChannel!.subscribe((status, [error]) {
+        debugPrint('Realtime channel subscription status: $status, error: $error');
+      });
+    } catch (e) {
+      debugPrint('Error subscribing to comments realtime: $e');
+    }
+  }
 
   @override
   void dispose() {
     _commentController.dispose();
+    if (_realtimeChannel != null) {
+      Supabase.instance.client.removeChannel(_realtimeChannel!);
+    }
     super.dispose();
   }
 

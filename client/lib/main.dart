@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:helpdesk_ticketing/core/router/app_router.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
 
+import 'package:helpdesk_ticketing/core/services/realtime_notification_provider.dart';
+
 final messengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
@@ -24,6 +26,7 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(realtimeNotificationProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

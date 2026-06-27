@@ -16,6 +16,10 @@ import type { PrismaClient } from "../generated/prisma/client.js";
 import { uploadAttachments } from "../lib/attachment.js";
 import { requireRole } from "../lib/rbac.js";
 import { supabase } from "../lib/supabase.js";
+import {
+	selectNotifications,
+	updateNotifications,
+} from "../../supabase/repository/index.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -193,54 +197,71 @@ notifications.openapi(getNotificationsRoute, async (c) => {
 			return c.json({ error: "User not found. supa id = true" }, 404);
 		}
 	}
-
-	const data = await prisma.notification.findMany({
-		where: {
+	
+	try {
+		const data = await selectNotifications(supabase, {
 			userId,
 			...(unreadOnly && { isRead: false }),
-		},
-		include: {
-			ticket: { select: { id: true, title: true, status: true } },
-		},
-		orderBy: { createdAt: "desc" },
-	});
+		});
 
-	const unreadCount = await prisma.notification.count({
-		where: { userId, isRead: false },
-	});
+		const { count, error: countError } = await supabase
+			.from("notifications")
+			.select("*", { count: "exact", head: true })
+			.eq("userId", userId)
+			.eq("isRead", false);
 
-	return c.json({ notifications: data, unreadCount });
+		if (countError) {
+			return c.json({ error: countError.message }, 500);
+		}
+
+		return c.json({ notifications: data, unreadCount: count || 0 });
+	} catch (err: unknown) {
+		console.error("Get Notifications Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // PATCH /notifications/:id/read — tandai satu notifikasi sudah dibaca (FR-007)
 notifications.patch("/:id/read", requireRole("ADMIN", "HELPDESK", "USER"));
 notifications.openapi(readNotificationRoute, async (c) => {
-	const prisma = c.get("prisma");
 	const { id } = c.req.param();
 
-	const notification = await prisma.notification.update({
-		where: { id },
-		data: { isRead: true, readAt: new Date() },
-	});
-
-	return c.json({ notification });
+	try {
+		const notification = await updateNotifications(supabase, id, {
+			isRead: true,
+			readAt: new Date(),
+		});
+		return c.json({ notification });
+	} catch (err: unknown) {
+		console.error("Read Notification Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // PATCH /notifications/read-all — tandai semua notifikasi dibaca
 notifications.patch("/read-all", requireRole("ADMIN", "HELPDESK", "USER"));
 notifications.openapi(readAllNotificationsRoute, async (c) => {
-	const prisma = c.get("prisma");
 	const body = await c.req.json();
 	const { userId } = body;
 
 	if (!userId) return c.json({ error: "userId wajib diisi" }, 400);
 
-	await prisma.notification.updateMany({
-		where: { userId, isRead: false },
-		data: { isRead: true, readAt: new Date() },
-	});
+	try {
+		const { error: updateError } = await supabase
+			.from("notifications")
+			.update({ isRead: true, readAt: new Date() })
+			.eq("userId", userId)
+			.eq("isRead", false);
 
-	return c.json({ message: "Semua notifikasi telah ditandai dibaca" });
+		if (updateError) {
+			return c.json({ error: updateError.message }, 500);
+		}
+
+		return c.json({ message: "Semua notifikasi telah ditandai dibaca" });
+	} catch (err: unknown) {
+		console.error("Read All Notifications Error:", err);
+		return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
+	}
 });
 
 // ─────────────────────────────────────────

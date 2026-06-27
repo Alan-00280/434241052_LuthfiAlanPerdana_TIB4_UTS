@@ -66,6 +66,7 @@ export const registerRoute = createRoute({
 					}),
 				},
 			},
+			description: "Terjadi kesalahan internal server",
 		},
 	},
 });

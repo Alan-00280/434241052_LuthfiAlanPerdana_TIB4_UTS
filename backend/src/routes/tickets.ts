@@ -15,6 +15,9 @@ import type { Prisma, PrismaClient, User } from "../generated/prisma/client.js";
 import { TicketPriority, TicketStatus } from "../generated/prisma/enums.js";
 import { uploadAttachments } from "../lib/attachment.js";
 import { requireRole } from "../lib/rbac.js";
+import { insertNotifications } from "../../supabase/repository/insert.js";
+import { supabase } from "../lib/supabase.js";
+import { selectTicketComments } from "../../supabase/repository/index.js";
 
 type ContextWithPrisma = {
 	Variables: {
@@ -170,8 +173,8 @@ tickets.openapi(getTicketsRoute, async (c) => {
 				creator: { select: { id: true, fullName: true, avatarUrl: true } },
 				assignee: { select: { id: true, fullName: true, avatarUrl: true } },
 				category: { select: { id: true, name: true } },
-				attachments: true,
-				_count: { select: { comments: true } },
+				attachments: true
+				// _count: { select: { comments: true } },
 			},
 		}),
 		prisma.ticket.count({ where }),
@@ -265,14 +268,6 @@ tickets.openapi(getTicketDetailRoute, async (c) => {
 			},
 			category: true,
 			attachments: true,
-			comments: {
-				include: {
-					author: {
-						select: { id: true, fullName: true, avatarUrl: true, role: true },
-					},
-				},
-				orderBy: { createdAt: "asc" },
-			},
 			histories: {
 				include: {
 					changedBy: { select: { id: true, fullName: true, role: true } },
@@ -283,7 +278,35 @@ tickets.openapi(getTicketDetailRoute, async (c) => {
 	});
 
 	if (!ticket) return c.json({ error: "Tiket tidak ditemukan" }, 404);
-	return c.json({ ticket });
+
+	// Ambil data komentar dari Supabase
+	const commentsData = await selectTicketComments(supabase, { ticketId: id });
+
+	// Ambil detail author komentar dari Prisma & gabungkan di memori
+	let commentsWithAuthor: any[] = [];
+	if (commentsData && commentsData.length > 0) {
+		const authorIds = Array.from(new Set(commentsData.map((comment) => comment.authorId)));
+		const authors = await prisma.user.findMany({
+			where: { id: { in: authorIds } },
+			select: { id: true, fullName: true, avatarUrl: true, role: true },
+		});
+		const authorMap = new Map(authors.map((a) => [a.id, a]));
+
+		commentsWithAuthor = commentsData
+			.map((comment) => ({
+				...comment,
+				author: authorMap.get(comment.authorId) || null,
+			}))
+			// Urutkan berdasarkan createdAt asc
+			.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+	}
+
+	const ticketWithComments = {
+		...ticket,
+		comments: commentsWithAuthor,
+	};
+
+	return c.json({ ticket: ticketWithComments });
 });
 
 // POST /tickets — buat tiket baru (FR-005)
@@ -474,8 +497,8 @@ tickets.openapi(updateTicketStatusRoute, async (c) => {
 	});
 
 	// Kirim notifikasi ke creator
-	await prisma.notification.create({
-		data: {
+	await insertNotifications(supabase,
+		{
 			userId: existing.creatorId,
 			ticketId: id,
 			type:
@@ -487,7 +510,7 @@ tickets.openapi(updateTicketStatusRoute, async (c) => {
 			title: "Status tiket diperbarui",
 			body: `Tiket "${existing.title}" sekarang berstatus ${status}.`,
 		},
-	});
+	);
 
 	return c.json({ ticket });
 });
@@ -548,15 +571,15 @@ tickets.openapi(assignTicketRoute, async (c) => {
 	});
 
 	// Notifikasi ke tech support baru
-	await prisma.notification.create({
-		data: {
+	await insertNotifications(supabase,
+		{
 			userId: techSupportId,
 			ticketId: id,
 			type: "TICKET_ASSIGNED",
 			title: "Tiket baru di-assign ke kamu",
 			body: `Kamu mendapat tiket: "${existing.title}"`,
 		},
-	});
+	);
 
 	return c.json({ ticket });
 });

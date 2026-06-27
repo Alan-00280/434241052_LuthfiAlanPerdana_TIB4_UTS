@@ -93,7 +93,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
     try {
       final repository = ref.read(ticketRepositoryProvider);
       
-      final ticket = await repository.createTicket(
+      await repository.createTicket(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         priority: _priority,
