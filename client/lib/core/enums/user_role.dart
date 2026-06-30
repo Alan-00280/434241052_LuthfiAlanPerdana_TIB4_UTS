@@ -38,9 +38,13 @@ enum UserRole {
     }
   }
 
-  /// Apakah role ini memiliki hak admin (ADMIN atau HELPDESK)
+  /// Apakah role ini memiliki hak (ADMIN atau HELPDESK)
   bool get isAdmin =>
       this == UserRole.admin || this == UserRole.helpdesk;
+
+  /// Apakah role ini memiliki hak (ADMIN)
+  bool get isTrueAdmin =>
+      this == UserRole.admin;
 
   /// Apakah role ini adalah user biasa
   bool get isUser => this == UserRole.user;

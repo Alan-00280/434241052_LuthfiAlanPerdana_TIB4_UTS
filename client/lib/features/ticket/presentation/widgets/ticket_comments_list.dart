@@ -176,21 +176,26 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(12),
-                                  bottomLeft: Radius.circular(12),
-                                  bottomRight: Radius.circular(12),
-                                ),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Text(
-                                comment.body,
-                                style: const TextStyle(fontSize: 14, height: 1.4),
-                              ),
+                            Builder(
+                              builder: (context) {
+                                final isDark = Theme.of(context).brightness == Brightness.dark;
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(12),
+                                      bottomLeft: Radius.circular(12),
+                                      bottomRight: Radius.circular(12),
+                                    ),
+                                    border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+                                  ),
+                                  child: Text(
+                                    comment.body,
+                                    style: const TextStyle(fontSize: 14, height: 1.4),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
 import 'package:helpdesk_ticketing/core/utils/api_client.dart';
+import 'package:helpdesk_ticketing/core/widgets/custom_app_bar.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
@@ -88,14 +89,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Reset Password',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.tertiary,
-          ),
-        ),
-        centerTitle: true,
+      appBar: const CustomAppBar(
+        title: 'Reset Password',
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -184,6 +179,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleResetPassword,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
+                  ),
                   child: _isLoading
                       ? const SizedBox(
                           height: 24,

@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:helpdesk_ticketing/main.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/pages/register_page.dart';
+import 'package:helpdesk_ticketing/core/widgets/auth_app_bar.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key});
@@ -100,74 +101,94 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login', style: TextStyle(
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),), centerTitle: true),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: AppSpacing.xl),
-              Text(
-                'E-Ticketing Helpdesk',
-                style: AppTextStyles.headline.copyWith(
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),
+      appBar: const AuthAppBar(title: 'Login'),
+      body: Stack(
+        children: [
+          Positioned(
+            bottom: -60,
+            right: -80,
+            child: Opacity(
+              opacity: 0.1,
+              child: Image.asset(
+                'assets/icon-yellow.png',
+                width: 420,
+                height: 420,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: AppSpacing.xl),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Masukkan email Anda',
-                  prefixIcon: const Icon(Icons.email),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Masukkan password Anda',
-                  prefixIcon: const Icon(Icons.lock),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Login'),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RegisterPage(),
-                    ),
-                  );
-                },
-                child: const Text('Don\'t have account? create a new one'),
-              ),
-            ],
+            ),
           ),
-        ),
+          Positioned.fill(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      'E-Ticketing Helpdesk',
+                      style: AppTextStyles.headline.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        hintText: 'Masukkan email Anda',
+                        prefixIcon: const Icon(Icons.email),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        hintText: 'Masukkan password Anda',
+                        prefixIcon: const Icon(Icons.lock),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                      ),
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Login'),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterPage(),
+                          ),
+                        );
+                      },
+                      child: const Text('Don\'t have account? create a new one'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

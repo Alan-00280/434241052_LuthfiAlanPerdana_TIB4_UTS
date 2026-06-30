@@ -204,9 +204,10 @@ class _NotificationTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       onTap: () => _showModal(context, ref),
-      tileColor: notif.isRead ? Colors.transparent : Colors.blue.shade50.withOpacity(0.5),
+      tileColor: notif.isRead ? Colors.transparent : (isDark ? Colors.blue.withOpacity(0.15) : Colors.blue.shade50.withOpacity(0.5)),
       leading: CircleAvatar(
         backgroundColor: _getIconColor().withOpacity(0.2),
         child: Icon(_getIconData(), color: _getIconColor()),

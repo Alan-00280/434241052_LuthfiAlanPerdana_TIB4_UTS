@@ -107,6 +107,9 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
+                      ),
                       child: const Text('Tutup'),
                     ),
                     SizedBox(height: 20.0)
@@ -121,15 +124,18 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
   }
 
   Widget _buildStatusChip(WidgetRef ref, TicketStatus? status, String label, bool isSelected) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (_) {
         ref.read(ticketFilterProvider.notifier).setStatus(status);
       },
-      selectedColor: AppColors.primaryLight,
+      selectedColor: isDark ? AppColors.primary.withOpacity(0.3) : AppColors.primaryLight,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primaryDark : AppColors.grey700,
+        color: isSelected
+            ? (isDark ? Colors.amber.shade200 : AppColors.primaryDark)
+            : (isDark ? Colors.grey.shade300 : AppColors.grey700),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );

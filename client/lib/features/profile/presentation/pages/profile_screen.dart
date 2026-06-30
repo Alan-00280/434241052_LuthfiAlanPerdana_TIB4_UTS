@@ -201,7 +201,7 @@ class ProfileScreen extends ConsumerWidget {
                             label: const Text('Ubah Profil'),
                           ),
                           const SizedBox(height: 16),
-                          if (state.profile!.role.isAdmin) ...[
+                          if (state.profile!.role.isTrueAdmin) ...[
                             OutlinedButton.icon(
                               onPressed: () => context.push(AppRoutes.userManagement),
                               icon: const Icon(Icons.people_outline),
@@ -234,6 +234,7 @@ class ProfileScreen extends ConsumerWidget {
                               style: TextStyle(color: Colors.grey, fontSize: 12),
                             ),
                           ),
+                          const SizedBox(height: 48)
                         ],
                       ),
                     ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:helpdesk_ticketing/core/widgets/custom_app_bar.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/assignee_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/tech_support_provider.dart';
@@ -69,7 +70,9 @@ class _AssignTicketScreenState extends ConsumerState<AssignTicketScreen> {
     final assigneesAsync = ref.watch(techSupportListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pilih Tech Support')),
+      appBar: const CustomAppBar(
+        title: 'Pilih Tech Support',
+      ),
       body: assigneesAsync.when(
         data: (techSupportList) {
           if (techSupportList.isEmpty) {

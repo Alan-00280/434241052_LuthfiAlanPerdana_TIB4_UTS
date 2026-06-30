@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/main.dart';
+import 'package:helpdesk_ticketing/core/widgets/auth_app_bar.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -78,9 +79,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Registrasi', style: TextStyle(
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),), centerTitle: true),
+      appBar: const AuthAppBar(title: 'Registrasi'),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -202,6 +201,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     onPressed: _isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null
                     ),
                     child: _isLoading
                         ? const SizedBox(

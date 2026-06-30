@@ -301,6 +301,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
                       ),
                       onPressed: _submit,
                       child: const Text('Kirim Tiket', style: TextStyle(fontSize: 16)),

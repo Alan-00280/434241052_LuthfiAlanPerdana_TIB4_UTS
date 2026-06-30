@@ -103,6 +103,9 @@ class UpdateStatusDialogState extends ConsumerState<UpdateStatusDialog> {
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : null,
+          ),
           child: _isLoading
               ? const SizedBox(
                   width: 16,
