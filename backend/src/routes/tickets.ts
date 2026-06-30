@@ -262,7 +262,7 @@ tickets.openapi(getTicketDetailRoute, async (c) => {
 			techSupport: {
 				include: {
 					user: {
-						select: { id: true, fullName: true, avatarUrl: true, email: true },
+						select: { id: true, fullName: true, avatarUrl: true, email: true, isActive: true },
 					},
 				},
 			},

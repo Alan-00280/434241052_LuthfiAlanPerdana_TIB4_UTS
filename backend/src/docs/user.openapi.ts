@@ -248,3 +248,95 @@ export const deleteUserRoute = createRoute({
 		},
 	},
 });
+
+export const toggleUserActiveRoute = createRoute({
+	method: "patch",
+	path: "/{id}/toggle-active",
+	tags: ["Users"],
+	summary: "Toggle user active status",
+	description: "Mengubah (toggle) status aktif/nonaktif akun pengguna (Khusus Admin).",
+	security: [
+		{
+			BearerAuth: [],
+		},
+	],
+	request: {
+		params: z.object({
+			id: z.string().openapi({ description: "ID User" }),
+		}),
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						message: z.string().openapi({ description: "Pesan status" }),
+						user: z.any().openapi({ description: "Data user terupdate" }),
+					}),
+				},
+			},
+			description: "Status keaktifan pengguna berhasil diubah",
+		},
+		401: {
+			description: "Unauthorized",
+		},
+		403: {
+			description: "Forbidden",
+		},
+		404: {
+			description: "Pengguna tidak ditemukan",
+		},
+	},
+});
+
+export const createUserRoute = createRoute({
+	method: "post",
+	path: "/",
+	tags: ["Users"],
+	summary: "Create staff (Helpdesk or Tech Support)",
+	description: "Membuat staff baru (Helpdesk atau Tech Support) dan mendaftarkannya di Supabase Auth (Khusus Admin).",
+	security: [
+		{
+			BearerAuth: [],
+		},
+	],
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						email: z.string().email().openapi({ description: "Email staf baru" }),
+						password: z.string().min(6).openapi({ description: "Password minimal 6 karakter" }),
+						username: z.string().openapi({ description: "Username unik" }),
+						fullName: z.string().openapi({ description: "Nama lengkap" }),
+						phone: z.string().optional().openapi({ description: "Nomor telepon" }),
+						role: z.enum(["HELPDESK", "TECHSUPPORT"]).openapi({ description: "Peran staf" }),
+						speciality: z.enum(["NETWORK", "HARDWARE", "SOFTWARE", "ACCOUNT_AUTH", "INFRASTRUCTURE"]).optional().openapi({ description: "Spesialisasi (wajib jika role = TECHSUPPORT)" }),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		201: {
+			content: {
+				"application/json": {
+					schema: z.object({
+						message: z.string().openapi({ description: "Pesan sukses" }),
+						user: z.any().openapi({ description: "Data user yang berhasil dibuat" }),
+					}),
+				},
+			},
+			description: "Staf berhasil dibuat",
+		},
+		400: {
+			description: "Bad Request (Data tidak lengkap / Duplikat)",
+		},
+		401: {
+			description: "Unauthorized",
+		},
+		403: {
+			description: "Forbidden",
+		},
+	},
+});

@@ -201,6 +201,14 @@ class ProfileScreen extends ConsumerWidget {
                             label: const Text('Ubah Profil'),
                           ),
                           const SizedBox(height: 16),
+                          if (state.profile!.role.isAdmin) ...[
+                            OutlinedButton.icon(
+                              onPressed: () => context.push(AppRoutes.userManagement),
+                              icon: const Icon(Icons.people_outline),
+                              label: const Text('Manajemen Pengguna'),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           OutlinedButton.icon(
                             onPressed: () => context.push(AppRoutes.resetPassword),
                             icon: const Icon(Icons.lock_reset),

@@ -14,6 +14,8 @@ import 'package:helpdesk_ticketing/features/ticket/presentation/pages/create_tic
 import 'package:helpdesk_ticketing/features/ticket/presentation/pages/assign_ticket_screen.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/profile_screen.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/reset_password_screen.dart';
+import 'package:helpdesk_ticketing/features/profile/presentation/pages/user_management_screen.dart';
+import 'package:helpdesk_ticketing/features/profile/presentation/pages/add_user_screen.dart';
 import 'package:helpdesk_ticketing/features/notification/presentation/pages/notification_screen.dart';
 
 /// Provider GoRouter yang reaktif terhadap perubahan auth state.
@@ -55,6 +57,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Role guard: hanya User yang boleh akses create-ticket
       if (isLoggedIn && user.isAdmin) {
         if (state.matchedLocation == AppRoutes.createTicket) {
+          return AppRoutes.dashboard;
+        }
+      }
+
+      // Role guard: hanya Admin yang boleh akses user-management
+      if (isLoggedIn && !user.isAdmin) {
+        if (state.matchedLocation == AppRoutes.userManagement ||
+            state.matchedLocation == AppRoutes.addUser) {
           return AppRoutes.dashboard;
         }
       }
@@ -134,6 +144,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.resetPassword,
         name: AppRoutes.resetPasswordName,
         builder: (context, state) => const ResetPasswordScreen(),
+      ),
+
+      // ── User Management (admin only, di luar shell) ─────────────────────
+      GoRoute(
+        path: AppRoutes.userManagement,
+        name: AppRoutes.userManagementName,
+        builder: (context, state) => const UserManagementScreen(),
+      ),
+
+      // ── Add User (admin only, di luar shell) ────────────────────────────
+      GoRoute(
+        path: AppRoutes.addUser,
+        name: AppRoutes.addUserName,
+        builder: (context, state) => const AddUserScreen(),
       ),
 
       // ── Ticket Detail (di luar shell) ──────────────────────────────────

@@ -24,7 +24,8 @@ class TechSupportList extends _$TechSupportList {
         id: map['id'] as String,
         fullName: map['fullName'] as String,
         avatarUrl: map['avatarUrl'] as String?,
-        speciality: speciality, // 👈 Masukkan hasil parsing ke sini
+        speciality: speciality,
+        isActive: map['isActive'] as bool? ?? true,
       );
     }).toList();
   }

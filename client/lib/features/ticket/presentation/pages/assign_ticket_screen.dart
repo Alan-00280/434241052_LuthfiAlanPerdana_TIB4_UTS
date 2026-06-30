@@ -82,22 +82,42 @@ class _AssignTicketScreenState extends ConsumerState<AssignTicketScreen> {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final techSupport = techSupportList[index];
+              final isSupportActive = techSupport.isActive;
+
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: techSupport.avatarUrl != null
-                      ? NetworkImage(techSupport.avatarUrl!)
-                      : null,
-                  child: techSupport.avatarUrl == null
-                      ? const Icon(Icons.person)
-                      : null,
+                leading: Opacity(
+                  opacity: isSupportActive ? 1.0 : 0.5,
+                  child: CircleAvatar(
+                    backgroundImage: techSupport.avatarUrl != null
+                        ? NetworkImage(techSupport.avatarUrl!)
+                        : null,
+                    child: techSupport.avatarUrl == null
+                        ? const Icon(Icons.person)
+                        : null,
+                  ),
                 ),
-                title: Text(techSupport.fullName),
+                title: Text(
+                  isSupportActive
+                      ? techSupport.fullName
+                      : '${techSupport.fullName} (inactivated)',
+                  style: TextStyle(
+                    color: isSupportActive ? null : Colors.grey.shade400,
+                    fontWeight: isSupportActive ? null : FontWeight.w400,
+                  ),
+                ),
                 subtitle: Text(
                   techSupport.speciality ?? 'Umum / No Speciality',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  style: TextStyle(
+                    color: isSupportActive ? Colors.grey[600] : Colors.grey.shade400,
+                    fontSize: 13,
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : () => _assignTicket(techSupport.id),
+                trailing: isSupportActive
+                    ? const Icon(Icons.chevron_right)
+                    : const Icon(Icons.block, color: Colors.grey, size: 16),
+                onTap: (!isSupportActive || _isLoading)
+                    ? null
+                    : () => _assignTicket(techSupport.id),
               );
             },
           );

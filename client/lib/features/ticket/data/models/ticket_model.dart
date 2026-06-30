@@ -78,6 +78,7 @@ class TicketModel extends TicketEntity {
         fullName: tsUser?['fullName'] as String?,
         email: tsUser?['email'] as String?,
         avatarUrl: tsUser?['avatarUrl'] as String?,
+        isActive: tsUser?['isActive'] as bool? ?? true,
       );
     }
 

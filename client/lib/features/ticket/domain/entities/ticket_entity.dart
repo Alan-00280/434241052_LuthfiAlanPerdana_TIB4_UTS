@@ -8,12 +8,14 @@ class TicketUserRef {
   final String fullName;
   final String? avatarUrl;
   final String? speciality;
+  final bool isActive;
 
   const TicketUserRef({
     required this.id,
     required this.fullName,
     this.avatarUrl,
     this.speciality,
+    this.isActive = true,
   });
 
   factory TicketUserRef.fromMap(Map<String, dynamic> map) {
@@ -21,6 +23,7 @@ class TicketUserRef {
       id: map['id'] ?? '',
       fullName: map['fullName'] ?? '',
       avatarUrl: map['avatarUrl'],
+      isActive: map['isActive'] as bool? ?? true,
     );
   }
 }
@@ -32,6 +35,7 @@ class TicketTechSupportRef {
   final String? fullName;
   final String? email;
   final String? avatarUrl;
+  final bool isActive;
 
   const TicketTechSupportRef({
     required this.id,
@@ -39,6 +43,7 @@ class TicketTechSupportRef {
     this.fullName,
     this.email,
     this.avatarUrl,
+    this.isActive = true,
   });
 }
 

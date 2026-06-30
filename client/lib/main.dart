@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:helpdesk_ticketing/core/router/app_router.dart';
 import 'package:helpdesk_ticketing/core/theme/theme.dart';
 
+import 'package:helpdesk_ticketing/core/widgets/inactive_user_guard.dart';
 import 'package:helpdesk_ticketing/core/services/realtime_notification_provider.dart';
 
 final messengerKey = GlobalKey<ScaffoldMessengerState>();
@@ -36,6 +37,7 @@ class MyApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
       scaffoldMessengerKey: messengerKey,
       routerConfig: router,
+      builder: (context, child) => InactiveUserGuard(child: child!),
     );
   }
 }

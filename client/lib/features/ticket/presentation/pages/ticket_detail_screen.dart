@@ -200,7 +200,7 @@ class TicketDetailScreen extends ConsumerWidget {
                   title: const Text('Tech Support'),
                   subtitle: Text(
                     ticket.techSupport != null
-                        ? '${ticket.techSupport!.fullName} (${ticket.techSupport!.speciality})'
+                        ? '${ticket.techSupport!.fullName}${ticket.techSupport!.isActive == false ? ' (inactivated)' : ''} (${ticket.techSupport!.speciality})'
                         : 'Belum ditugaskan',
                   ),
                 ),

@@ -48,6 +48,7 @@ next-env.d.ts
 **/changes
 **/spec
 /*spec
+/agents
 
 # Added by code-review-graph
 .code-review-graph/
