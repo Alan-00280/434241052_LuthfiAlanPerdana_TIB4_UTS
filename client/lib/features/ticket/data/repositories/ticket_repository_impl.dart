@@ -158,6 +158,7 @@ class TicketRepositoryImpl implements TicketRepository {
     return TicketStatsEntity(
       total: stats['total'] as int? ?? 0,
       open: stats['open'] as int? ?? 0,
+      assigned: stats['assigned'] as int? ?? 0,
       inProgress: stats['inProgress'] as int? ?? 0,
       pending: stats['pending'] as int? ?? 0,
       resolved: stats['resolved'] as int? ?? 0,

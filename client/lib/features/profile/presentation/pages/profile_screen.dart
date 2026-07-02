@@ -210,6 +210,12 @@ class ProfileScreen extends ConsumerWidget {
                             const SizedBox(height: 16),
                           ],
                           OutlinedButton.icon(
+                            onPressed: () => context.push(AppRoutes.settings),
+                            icon: const Icon(Icons.settings),
+                            label: const Text('Pengaturan'),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
                             onPressed: () => context.push(AppRoutes.resetPassword),
                             icon: const Icon(Icons.lock_reset),
                             label: const Text('Reset Password'),

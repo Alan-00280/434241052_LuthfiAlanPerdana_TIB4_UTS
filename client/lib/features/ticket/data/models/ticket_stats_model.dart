@@ -4,6 +4,7 @@ class TicketStatsModel extends TicketStatsEntity {
   const TicketStatsModel({
     required super.total,
     required super.open,
+    required super.assigned,
     required super.inProgress,
     required super.pending,
     required super.resolved,
@@ -15,6 +16,7 @@ class TicketStatsModel extends TicketStatsEntity {
     return TicketStatsModel(
       total: json['total'] as int? ?? 0,
       open: json['open'] as int? ?? 0,
+      assigned: json['assigned'] as int? ?? 0,
       inProgress: json['inProgress'] as int? ?? 0,
       pending: json['pending'] as int? ?? 0,
       resolved: json['resolved'] as int? ?? 0,

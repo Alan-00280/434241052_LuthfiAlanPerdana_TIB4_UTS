@@ -31,7 +31,7 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
       final supabaseClient = Supabase.instance.client;
       final channelName = 'ticket_room:${widget.ticketId}';
       debugPrint('Realtime: Subscribing to channel: $channelName');
-      
+
       _realtimeChannel = supabaseClient.channel(channelName);
 
       _realtimeChannel!.onBroadcast(
@@ -43,21 +43,31 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
             final commentJson = innerPayload?['comment'];
             if (commentJson != null) {
               final newComment = CommentModel.fromJson(commentJson);
-              debugPrint('Realtime: Parsed comment: ${newComment.id} - ${newComment.body}');
+              debugPrint(
+                'Realtime: Parsed comment: ${newComment.id} - ${newComment.body}',
+              );
               if (mounted) {
-                ref.read(ticketCommentsProvider(widget.ticketId).notifier).addComment(newComment);
+                ref
+                    .read(ticketCommentsProvider(widget.ticketId).notifier)
+                    .addComment(newComment);
               }
             } else {
-              debugPrint('Realtime: payload[\'payload\'][\'comment\'] is null!');
+              debugPrint(
+                'Realtime: payload[\'payload\'][\'comment\'] is null!',
+              );
             }
           } catch (e, stack) {
-            debugPrint('Realtime: Error parsing comment from broadcast: $e\n$stack');
+            debugPrint(
+              'Realtime: Error parsing comment from broadcast: $e\n$stack',
+            );
           }
         },
       );
 
       _realtimeChannel!.subscribe((status, [error]) {
-        debugPrint('Realtime channel subscription status: $status, error: $error');
+        debugPrint(
+          'Realtime channel subscription status: $status, error: $error',
+        );
       });
     } catch (e) {
       debugPrint('Error subscribing to comments realtime: $e');
@@ -80,7 +90,9 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
     final user = ref.read(currentUserProvider);
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sesi telah berakhir. Silakan login kembali.')),
+        const SnackBar(
+          content: Text('Sesi telah berakhir. Silakan login kembali.'),
+        ),
       );
       return;
     }
@@ -93,9 +105,9 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
       ref.invalidate(ticketCommentsProvider(widget.ticketId));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengirim komentar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal mengirim komentar: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -105,11 +117,13 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
   @override
   Widget build(BuildContext context) {
     final commentsAsync = ref.watch(ticketCommentsProvider(widget.ticketId));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         commentsAsync.when(
+          skipLoadingOnRefresh: true,
           data: (comments) {
             if (comments.isEmpty) {
               return const Padding(
@@ -120,8 +134,8 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
 
             Widget listWidget = ListView.builder(
               shrinkWrap: true,
-              physics: comments.length > 5 
-                  ? const AlwaysScrollableScrollPhysics() 
+              physics: comments.length > 5
+                  ? const AlwaysScrollableScrollPhysics()
                   : const NeverScrollableScrollPhysics(),
               itemCount: comments.length,
               itemBuilder: (context, index) {
@@ -137,9 +151,13 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                        backgroundImage: avatarUrl != null
+                            ? NetworkImage(avatarUrl)
+                            : null,
                         backgroundColor: Colors.indigo.shade100,
-                        child: avatarUrl == null ? const Icon(Icons.person, color: Colors.indigo) : null,
+                        child: avatarUrl == null
+                            ? const Icon(Icons.person, color: Colors.indigo)
+                            : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -150,49 +168,79 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
                               children: [
                                 Text(
                                   authorName,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: role == 'HELPDESK' ? Colors.blue.shade100 : (role == 'ADMIN' ? Colors.red.shade100 : Colors.grey.shade200),
+                                    color: role == 'HELPDESK'
+                                        ? Colors.blue.shade100
+                                        : (role == 'ADMIN'
+                                              ? Colors.red.shade100
+                                              : Colors.grey.shade200),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     role,
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: role == 'HELPDESK' ? Colors.blue.shade800 : (role == 'ADMIN' ? Colors.red.shade800 : Colors.grey.shade800),
+                                      color: role == 'HELPDESK'
+                                          ? Colors.blue.shade800
+                                          : (role == 'ADMIN'
+                                                ? Colors.red.shade800
+                                                : Colors.grey.shade800),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  comment.createdAt.toLocal().toString().split('.')[0],
-                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                                  comment.createdAt.toLocal().toString().split(
+                                    '.',
+                                  )[0],
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Builder(
                               builder: (context) {
-                                final isDark = Theme.of(context).brightness == Brightness.dark;
+                                final isDark =
+                                    Theme.of(context).brightness ==
+                                    Brightness.dark;
                                 return Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
+                                    color: isDark
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade100,
                                     borderRadius: const BorderRadius.only(
                                       topRight: Radius.circular(12),
                                       bottomLeft: Radius.circular(12),
                                       bottomRight: Radius.circular(12),
                                     ),
-                                    border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade200),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? Colors.grey.shade700
+                                          : Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Text(
                                     comment.body,
-                                    style: const TextStyle(fontSize: 14, height: 1.4),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      height: 1.4,
+                                    ),
                                   ),
                                 );
                               },
@@ -209,19 +257,18 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
             if (comments.length > 5) {
               listWidget = ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 450),
-                child: Scrollbar(
-                  thumbVisibility: true,
-                  child: listWidget,
-                ),
+                child: Scrollbar(thumbVisibility: true, child: listWidget),
               );
             }
 
             return listWidget;
           },
-          loading: () => const Center(child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: CircularProgressIndicator(),
-          )),
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          ),
           error: (err, stack) => Text('Gagal memuat komentar: $err'),
         ),
         const SizedBox(height: 16),
@@ -236,8 +283,13 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
                 decoration: InputDecoration(
                   hintText: 'Tulis komentar...',
                   filled: true,
-                  fillColor: Colors.grey.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  fillColor: isDark
+                      ? Colors.grey.shade800
+                      : Colors.grey.shade50,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -256,8 +308,15 @@ class TicketCommentsListState extends ConsumerState<TicketCommentsList> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: _isSubmitting 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : const Icon(Icons.send, color: Colors.white),
                 onPressed: _isSubmitting ? null : _submitComment,
               ),

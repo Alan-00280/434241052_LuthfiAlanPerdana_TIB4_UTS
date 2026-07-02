@@ -6,20 +6,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:helpdesk_ticketing/core/router/route_names.dart';
+import 'package:helpdesk_ticketing/core/enums/ticket_status.dart';
 import 'package:helpdesk_ticketing/features/auth/presentation/providers/auth_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_detail_provider.dart';
 import 'package:helpdesk_ticketing/features/ticket/presentation/providers/ticket_list_provider.dart';
 
 import 'package:helpdesk_ticketing/core/widgets/custom_app_bar.dart';
 
-class TicketDetailScreen extends ConsumerWidget {
+class TicketDetailScreen extends ConsumerStatefulWidget {
   final String ticketId;
 
   const TicketDetailScreen({super.key, required this.ticketId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ticketAsync = ref.watch(ticketDetailProvider(ticketId));
+  ConsumerState<TicketDetailScreen> createState() => _TicketDetailScreenState();
+}
+
+class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
+  bool _isAutoUpdating = false;
+  bool _isActionLoading = false;
+
+  Future<void> _handleUpdateStatus(
+    String ticketId,
+    TicketStatus newStatus,
+    String userId,
+    String note,
+  ) async {
+    if (_isActionLoading) return;
+    setState(() => _isActionLoading = true);
+    try {
+      final repo = ref.read(ticketRepositoryProvider);
+      await repo.updateStatus(ticketId, newStatus, userId, note: note);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Status tiket berhasil diubah menjadi ${newStatus.displayName}')),
+        );
+      }
+
+      ref.invalidate(ticketDetailProvider(widget.ticketId));
+      ref.invalidate(ticketListProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengubah status: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isActionLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ticketAsync = ref.watch(ticketDetailProvider(widget.ticketId));
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -36,12 +78,12 @@ class TicketDetailScreen extends ConsumerWidget {
                           showDialog(
                             context: context,
                             builder: (ctx) => UpdateStatusDialog(
-                              ticketId: ticketId,
+                              ticketId: widget.ticketId,
                               initialStatus: ticket.status,
                               userId: user!.id,
                             ),
                           ).then((_) {
-                            ref.invalidate(ticketDetailProvider(ticketId));
+                            ref.invalidate(ticketDetailProvider(widget.ticketId));
                             ref.invalidate(ticketListProvider);
                           });
                         },
@@ -56,7 +98,7 @@ class TicketDetailScreen extends ConsumerWidget {
               onPressed: () {
                 context.pushNamed(
                   AppRoutes.assignTicketName,
-                  pathParameters: {AppRoutes.paramId: ticketId},
+                  pathParameters: {AppRoutes.paramId: widget.ticketId},
                 );
               },
               label: const Text('Assign Tiket'),
@@ -65,9 +107,39 @@ class TicketDetailScreen extends ConsumerWidget {
           : null,
       body: ticketAsync.when(
         data: (ticket) {
+          // Jika tech support membuka tiket yang statusnya ASSIGNED, otomatis ubah ke IN_PROGRESS
+          if (user != null &&
+              user.role.isTechSupport &&
+              ticket.status == TicketStatus.assigned &&
+              !_isAutoUpdating) {
+            _isAutoUpdating = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              try {
+                final repo = ref.read(ticketRepositoryProvider);
+                await repo.updateStatus(
+                  widget.ticketId,
+                  TicketStatus.inProgress,
+                  user.id,
+                  note: 'Otomatis diubah ke In Progress oleh Teknisi',
+                );
+                // Refresh data setelah update
+                ref.invalidate(ticketDetailProvider(widget.ticketId));
+                ref.invalidate(ticketListProvider);
+              } catch (e) {
+                debugPrint('Gagal mengubah status ke IN_PROGRESS secara otomatis: $e');
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _isAutoUpdating = false;
+                  });
+                }
+              }
+            });
+          }
+
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(ticketDetailProvider(ticketId));
+              ref.invalidate(ticketDetailProvider(widget.ticketId));
             },
             child: ListView(
               padding: const EdgeInsets.all(16.0),
@@ -171,7 +243,7 @@ class TicketDetailScreen extends ConsumerWidget {
                           context: context,
                           isScrollControlled: true,
                           builder: (context) =>
-                              TicketAttachmentsModal(ticketId: ticketId),
+                              TicketAttachmentsModal(ticketId: widget.ticketId),
                         );
                       },
                       icon: const Icon(Icons.attachment),
@@ -204,6 +276,75 @@ class TicketDetailScreen extends ConsumerWidget {
                         : 'Belum ditugaskan',
                   ),
                 ),
+
+                // Action Buttons for TechSupport and User
+                if (user != null) ...[
+                  if (user.role.isTechSupport && ticket.status == TicketStatus.inProgress) ...[
+                    const SizedBox(height: 16),
+                    _isActionLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () => _handleUpdateStatus(
+                                widget.ticketId,
+                                TicketStatus.resolved,
+                                user.id,
+                                'Tiket ditandai SELESAI oleh Teknisi',
+                              ),
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: const Text(
+                                'DONE',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ],
+                  if (user.role.isUser && ticket.status == TicketStatus.resolved) ...[
+                    const SizedBox(height: 16),
+                    _isActionLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () => _handleUpdateStatus(
+                                widget.ticketId,
+                                TicketStatus.closed,
+                                user.id,
+                                'Konfirmasi penyelesaian oleh User',
+                              ),
+                              icon: const Icon(Icons.rate_review),
+                              label: const Text(
+                                'CONFIRM',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ],
+                ],
+
                 const Divider(height: 32),
                 Text(
                   'Komentar',
@@ -212,7 +353,7 @@ class TicketDetailScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TicketCommentsList(ticketId: ticketId),
+                TicketCommentsList(ticketId: widget.ticketId),
                 const Divider(height: 32),
                 Text(
                   'Dibuat pada: ${ticket.createdAt.toLocal().toString().split('.')[0]}',
@@ -236,7 +377,7 @@ class TicketDetailScreen extends ConsumerWidget {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0),
-                        child: TicketHistoriesList(ticketId: ticketId),
+                        child: TicketHistoriesList(ticketId: widget.ticketId),
                       ),
                     ],
                   ),

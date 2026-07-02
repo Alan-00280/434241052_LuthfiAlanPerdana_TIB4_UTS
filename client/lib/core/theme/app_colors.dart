@@ -66,6 +66,8 @@ Color getStatusColor(String status) {
   switch (status.toLowerCase()) {
     case 'open':
       return AppColors.info;
+    case 'assigned':
+      return Colors.indigo;
     case 'in progress':
       return AppColors.warning;
     case 'resolved':

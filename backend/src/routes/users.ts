@@ -92,7 +92,7 @@ users.openapi(getTechSupportsRoute, async (c) => {
 });
 
 // GET /users/:id — detail user
-users.get("/:id", requireRole("ADMIN", "USER", "HELPDESK"));
+users.get("/:id", requireRole("ADMIN", "USER", "HELPDESK", "TECHSUPPORT"));
 users.openapi(getUserDetailRoute, async (c) => {
 	const prisma = c.get("prisma");
 	let id = c.req.param("id");
@@ -136,7 +136,7 @@ users.openapi(getUserDetailRoute, async (c) => {
 });
 
 // PUT /users/:id — update profil user
-users.put("/:id", requireRole("ADMIN", "USER", "HELPDESK"));
+users.put("/:id", requireRole("ADMIN", "USER", "HELPDESK", "TECHSUPPORT"));
 users.openapi(updateUserRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const id = c.req.param("id");
@@ -254,34 +254,22 @@ users.openapi(createUserRoute, async (c) => {
 		}
 
 		// 3. Buat User di Supabase Auth via Admin API
-		type AuthData = Awaited<
-			ReturnType<typeof supabase.auth.admin.createUser>
-		>["data"];
+		const { data: authData, error: authError } =
+			await supabase.auth.admin.createUser({
+				email,
+				password,
+				email_confirm: true,
+				user_metadata: {
+					full_name: fullName,
+					username,
+				},
+			});
 
-		let authData: AuthData = {
-			user: null,
-		};
-
-		if (role === "HELPDESK") {
-			const { data, error: authError } =
-				await supabase.auth.admin.createUser({
-					email,
-					password,
-					email_confirm: true,
-					user_metadata: {
-						full_name: fullName,
-						username,
-					},
-				});
-
-			if (authError) {
-				return c.json(
-					{ error: `Supabase Auth Error: ${authError.message}` },
-					400,
-				);
-			}
-
-			authData = data;
+		if (authError) {
+			return c.json(
+				{ error: `Supabase Auth Error: ${authError.message}` },
+				400,
+			);
 		}
 
 		// 4. Simpan ke Database Lokal (Prisma)

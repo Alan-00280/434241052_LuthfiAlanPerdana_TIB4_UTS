@@ -15,6 +15,7 @@ class AppRoutes {
   static const String userManagement = '/user-management';
   static const String addUser = '/user-management/add';
   static const String notifications = '/notifications';
+  static const String settings = '/settings';
   static const String notFound = '/404';
 
   // ─── Named Routes ────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ class AppRoutes {
   static const String userManagementName = 'user-management';
   static const String addUserName = 'add-user';
   static const String notificationsName = 'notifications';
+  static const String settingsName = 'settings';
   static const String notFoundName = 'not-found';
 
   // ─── Parameter Keys ──────────────────────────────────────────────────────

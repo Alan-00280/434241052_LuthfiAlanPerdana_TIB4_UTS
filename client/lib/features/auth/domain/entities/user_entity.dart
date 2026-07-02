@@ -29,6 +29,9 @@ class UserEntity {
   /// Apakah pengguna adalah user biasa
   bool get isUser => role.isUser;
 
+  /// Apakah pengguna adalah tech support
+  bool get isTechSupport => role.isTechSupport;
+
   /// Nama tampilan — gunakan fullName, fallback ke username
   String get displayName => fullName.isNotEmpty ? fullName : username;
 }

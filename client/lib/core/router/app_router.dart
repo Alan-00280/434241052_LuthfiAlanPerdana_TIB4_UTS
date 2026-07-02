@@ -17,6 +17,7 @@ import 'package:helpdesk_ticketing/features/profile/presentation/pages/reset_pas
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/user_management_screen.dart';
 import 'package:helpdesk_ticketing/features/profile/presentation/pages/add_user_screen.dart';
 import 'package:helpdesk_ticketing/features/notification/presentation/pages/notification_screen.dart';
+import 'package:helpdesk_ticketing/features/settings/presentation/pages/settings_screen.dart';
 
 /// Provider GoRouter yang reaktif terhadap perubahan auth state.
 /// Router otomatis redirect berdasarkan status autentikasi pengguna.
@@ -144,6 +145,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.resetPassword,
         name: AppRoutes.resetPasswordName,
         builder: (context, state) => const ResetPasswordScreen(),
+      ),
+
+      // ── Settings (di luar shell) ───────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.settings,
+        name: AppRoutes.settingsName,
+        builder: (context, state) => const SettingsScreen(),
       ),
 
       // ── User Management (admin only, di luar shell) ─────────────────────

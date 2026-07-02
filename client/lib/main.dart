@@ -7,6 +7,7 @@ import 'package:helpdesk_ticketing/core/theme/theme.dart';
 
 import 'package:helpdesk_ticketing/core/widgets/inactive_user_guard.dart';
 import 'package:helpdesk_ticketing/core/services/realtime_notification_provider.dart';
+import 'package:helpdesk_ticketing/features/settings/presentation/providers/settings_provider.dart';
 
 final messengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -29,12 +30,13 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(realtimeNotificationProvider);
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'E-Ticketing Helpdesk',
       theme: getAppTheme(),
       darkTheme: getDarkTheme(),
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
       scaffoldMessengerKey: messengerKey,
       routerConfig: router,
       builder: (context, child) => InactiveUserGuard(child: child!),

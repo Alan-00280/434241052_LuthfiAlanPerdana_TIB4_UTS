@@ -86,6 +86,7 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
                       children: [
                         _buildStatusChip(ref, null, 'Semua', filter.status == null),
                         _buildStatusChip(ref, TicketStatus.open, 'Open', filter.status == TicketStatus.open),
+                        _buildStatusChip(ref, TicketStatus.assigned, 'Assigned', filter.status == TicketStatus.assigned),
                         _buildStatusChip(ref, TicketStatus.inProgress, 'In Progress', filter.status == TicketStatus.inProgress),
                         _buildStatusChip(ref, TicketStatus.pending, 'Pending', filter.status == TicketStatus.pending),
                         _buildStatusChip(ref, TicketStatus.resolved, 'Resolved', filter.status == TicketStatus.resolved),
@@ -256,6 +257,8 @@ class _TicketCard extends StatelessWidget {
     switch (status) {
       case TicketStatus.open:
         return Colors.blue;
+      case TicketStatus.assigned:
+        return Colors.indigo;
       case TicketStatus.inProgress:
         return Colors.orange;
       case TicketStatus.pending:

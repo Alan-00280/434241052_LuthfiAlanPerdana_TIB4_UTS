@@ -3,6 +3,7 @@
 enum UserRole {
   admin,
   helpdesk,
+  techsupport,
   user;
 
   static UserRole fromString(String? value) {
@@ -11,6 +12,8 @@ enum UserRole {
         return UserRole.admin;
       case 'HELPDESK':
         return UserRole.helpdesk;
+      case 'TECHSUPPORT':
+        return UserRole.techsupport;
       default:
         return UserRole.user;
     }
@@ -22,6 +25,8 @@ enum UserRole {
         return 'ADMIN';
       case UserRole.helpdesk:
         return 'HELPDESK';
+      case UserRole.techsupport:
+        return 'TECHSUPPORT';
       case UserRole.user:
         return 'USER';
     }
@@ -33,6 +38,8 @@ enum UserRole {
         return 'System Admin';
       case UserRole.helpdesk:
         return 'Helpdesk Officer';
+      case UserRole.techsupport:
+        return 'Technical Support';
       case UserRole.user:
         return 'User';
     }
@@ -48,4 +55,7 @@ enum UserRole {
 
   /// Apakah role ini adalah user biasa
   bool get isUser => this == UserRole.user;
+
+  /// Apakah role ini adalah tech support
+  bool get isTechSupport => this == UserRole.techsupport;
 }

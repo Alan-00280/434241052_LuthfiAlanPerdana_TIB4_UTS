@@ -1,6 +1,6 @@
 import type { Context, Next } from "hono";
 
-type Role = ("ADMIN" | "HELPDESK" | "USER")[];
+type Role = ("ADMIN" | "HELPDESK" | "USER" | "TECHSUPPORT")[];
 
 export function requireRole(...roles: Role) {
 	return async (c: Context, next: Next) => {

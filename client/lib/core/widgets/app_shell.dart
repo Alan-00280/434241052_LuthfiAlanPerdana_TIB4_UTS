@@ -16,7 +16,7 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final user = authState.hasValue ? authState.value : null;
-    final isUser = user?.isUser ?? true;
+    final isUser = user?.isUser ?? false;
 
     return Scaffold(
       body: navigationShell,

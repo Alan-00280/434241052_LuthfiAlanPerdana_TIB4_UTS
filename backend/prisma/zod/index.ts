@@ -36,7 +36,7 @@ export const UserRoleSchema = z.enum(['USER','HELPDESK','ADMIN','TECHSUPPORT']);
 
 export type UserRoleType = `${z.infer<typeof UserRoleSchema>}`
 
-export const TicketStatusSchema = z.enum(['OPEN','IN_PROGRESS','PENDING','RESOLVED','CLOSED']);
+export const TicketStatusSchema = z.enum(['OPEN','ASSIGNED','IN_PROGRESS','PENDING','RESOLVED','CLOSED']);
 
 export type TicketStatusType = `${z.infer<typeof TicketStatusSchema>}`
 

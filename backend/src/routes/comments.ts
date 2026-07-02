@@ -25,7 +25,7 @@ type ContextWithPrisma = {
 const comments = new OpenAPIHono<ContextWithPrisma>();
 
 // GET /tickets/:ticketId/comments — list komentar tiket (FR-005)
-comments.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.get("/", requireRole("ADMIN", "HELPDESK", "USER", "TECHSUPPORT"));
 comments.openapi(getCommentsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
@@ -62,7 +62,7 @@ comments.openapi(getCommentsRoute, async (c) => {
 });
 
 // POST /tickets/:ticketId/comments — tambah komentar / reply (FR-005)
-comments.post("/", requireRole("ADMIN", "HELPDESK", "USER"));
+comments.post("/", requireRole("ADMIN", "HELPDESK", "USER", "TECHSUPPORT"));
 comments.openapi(createCommentRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const ticketId = c.req.param("ticketId");
@@ -105,6 +105,16 @@ comments.openapi(createCommentRoute, async (c) => {
 
 		const newComment = insertResult[0];
 
+		let userTechSupport;
+		if (ticket.techSupportId) {
+			const techSupport = await prisma.techSupport.findFirst({
+				where: { id: ticket.techSupportId },
+			});
+			userTechSupport = await prisma.user.findFirst({
+				where: { id: techSupport?.userId },
+			})
+		}
+
 		// Ambil data author dari Prisma
 		const author = await prisma.user.findUnique({
 			where: { id: authorId },
@@ -127,6 +137,18 @@ comments.openapi(createCommentRoute, async (c) => {
 			if (ticket.assigneeId && ticket.assigneeId !== authorId) {
 				await insertNotifications(supabase, {
 					userId: ticket.assigneeId,
+					ticketId,
+					type: "TICKET_COMMENT_ADDED",
+					title: "Komentar baru pada tiket",
+					body: `${author.fullName} menambahkan komentar pada tiket "${ticket.title}"`,
+				});
+			}
+
+			//TODO Notifikasi ke TECHSUPPORT
+			// 🔔 Notifikasi ke techsupport (jika ada & bukan author)
+			if (userTechSupport && userTechSupport.id !== authorId) {
+				await insertNotifications(supabase, {
+					userId: userTechSupport.id,
 					ticketId,
 					type: "TICKET_COMMENT_ADDED",
 					title: "Komentar baru pada tiket",

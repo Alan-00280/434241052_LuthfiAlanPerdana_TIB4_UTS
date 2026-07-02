@@ -29,7 +29,6 @@ type ContextWithPrisma = {
 
 const tickets = new OpenAPIHono<ContextWithPrisma>();
 
-// GET /tickets — List tiket berdasarkan role-based flow diagram
 // Query params: status, priority, categoryId, search, page, limit
 // tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"), async (c) => {
 //     const prisma = c.get("prisma");
@@ -109,11 +108,18 @@ const tickets = new OpenAPIHono<ContextWithPrisma>();
 //         },
 //     });
 // });
+/* */
 
-tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER"));
+// GET /tickets — List tiket berdasarkan role-based flow diagram
+tickets.get("/", requireRole("ADMIN", "HELPDESK", "USER", "TECHSUPPORT"));
 tickets.openapi(getTicketsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const currentUser = c.get("user"); // Ambil data user dari middleware auth
+	const techSupport = (currentUser.role === "TECHSUPPORT") ? await prisma.techSupport.findFirst({
+		where: {
+			userId: currentUser.id
+		}
+	}) : null;
 
 	// Ambil semua filter dari Query Parameters
 	const statusParam = c.req.query("status") as TicketStatus | undefined;
@@ -128,6 +134,7 @@ tickets.openapi(getTicketsRoute, async (c) => {
 	// ─── IMPLEMENTASI LOGIKA DIAGRAM (DI SINI KUNCINYA) ──────────────────────
 	let roleCondition: Prisma.TicketWhereInput = {};
 
+	//TODO ADD FOR TECHSUPPORT
 	if (currentUser.role === "ADMIN") {
 		// Admin -> SELECT Ticket ALL (tanpa batasan kepemilikan)
 		roleCondition = {};
@@ -136,7 +143,14 @@ tickets.openapi(getTicketsRoute, async (c) => {
 		roleCondition = {
 			OR: [{ assigneeId: currentUser.id }, { status: "OPEN" }],
 		};
-	} else {
+	} 
+	else if (currentUser.role === "TECHSUPPORT") {
+		// Techsupporet: Tiket yang di-assign ke dirinya
+		roleCondition = {
+			AND: [{ techSupportId: techSupport?.id }],
+		};
+	}
+	else {
 		// User Biasa -> Hanya tiket yang dibuat oleh dirinya sendiri
 		roleCondition = { creatorId: currentUser.id };
 	}
@@ -193,14 +207,20 @@ tickets.openapi(getTicketsRoute, async (c) => {
 });
 
 // GET /tickets/stats — statistik tiket untuk dashboard (FR-008)
-tickets.get("/stats", requireRole("ADMIN", "HELPDESK", "USER"));
+tickets.get("/stats", requireRole("ADMIN", "HELPDESK", "USER", "TECHSUPPORT"));
 tickets.openapi(getStatsRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const currentUser = c.get("user"); // Ambil user dari middleware context
+	const techSupport = (currentUser.role === "TECHSUPPORT") ? await prisma.techSupport.findFirst({
+		where: {
+			userId: currentUser.id
+		}
+	}) : null;
 
 	// ─── IMPLEMENTASI LOGIKA FILTER BERDASARKAN ROLE ─────────────────────────
 	let roleCondition: Prisma.TicketWhereInput = {};
 
+	//TODO ADD FOR TECHSUPPORT
 	if (currentUser.role === "ADMIN") {
 		// Admin: Bisa melihat statistik seluruh tiket di sistem
 		roleCondition = {};
@@ -209,14 +229,22 @@ tickets.openapi(getStatsRoute, async (c) => {
 		roleCondition = {
 			OR: [{ assigneeId: currentUser.id }, { status: "OPEN" }],
 		};
-	} else {
+	} 
+	else if (currentUser.role === "TECHSUPPORT") {
+		// Techsupporet: Tiket yang di-assign ke dirinya
+		roleCondition = {
+			OR: [{ techSupportId: techSupport?.id }],
+		};
+	}
+	else {
 		// User Biasa: PAKSA hanya menghitung statistik tiket miliknya sendiri
 		roleCondition = { creatorId: currentUser.id };
 	}
+
 	// ─────────────────────────────────────────────────────────────────────────
 
 	// Hitung seluruh status secara paralel memanfaatkan base filter roleCondition di atas
-	const [total, open, inProgress, pending, resolved, closed] =
+	const [total, open, inProgress, assigned, pending, resolved, closed] =
 		await Promise.all([
 			prisma.ticket.count({
 				where: roleCondition,
@@ -226,6 +254,9 @@ tickets.openapi(getStatsRoute, async (c) => {
 			}),
 			prisma.ticket.count({
 				where: { ...roleCondition, status: "IN_PROGRESS" },
+			}),
+			prisma.ticket.count({
+				where: { ...roleCondition, status: "ASSIGNED" },
 			}),
 			prisma.ticket.count({
 				where: { ...roleCondition, status: "PENDING" },
@@ -239,13 +270,13 @@ tickets.openapi(getStatsRoute, async (c) => {
 		]);
 
 	return c.json({
-		stats: { total, open, inProgress, pending, resolved, closed },
+		stats: { total, open, inProgress, assigned, pending, resolved, closed },
 		filteredBy: currentUser.role, // Berikan info role apa yang sedang menyaring data ini
 	});
 });
 
 // GET /tickets/:id — detail tiket (FR-005)
-tickets.get("/:id", requireRole("ADMIN", "HELPDESK", "USER"));
+tickets.get("/:id", requireRole("ADMIN", "HELPDESK", "USER", "TECHSUPPORT"));
 tickets.openapi(getTicketDetailRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
@@ -459,7 +490,7 @@ tickets.openapi(updateTicketRoute, async (c) => {
 });
 
 // PATCH /tickets/:id/status — update status tiket (FR-006)
-tickets.patch("/:id/status", requireRole("ADMIN", "HELPDESK"));
+tickets.patch("/:id/status", requireRole("ADMIN", "HELPDESK", "TECHSUPPORT", "USER"));
 tickets.openapi(updateTicketStatusRoute, async (c) => {
 	const prisma = c.get("prisma");
 	const { id } = c.req.param();
@@ -470,6 +501,8 @@ tickets.openapi(updateTicketStatusRoute, async (c) => {
 	if (!status || !changedById) {
 		return c.json({ error: "status dan changedById wajib diisi" }, 400);
 	}
+
+	const userChanger = await prisma.user.findUnique({where: { id: changedById }});
 
 	const existing = await prisma.ticket.findUnique({ where: { id } });
 	if (!existing) return c.json({ error: "Tiket tidak ditemukan" }, 404);
@@ -512,6 +545,24 @@ tickets.openapi(updateTicketStatusRoute, async (c) => {
 		},
 	);
 
+	// Kirim notifikasi ke helpdesk ketika DONE oleh TECHSUPPORT
+	if (userChanger?.role === "TECHSUPPORT") {
+		await insertNotifications(supabase,
+			{
+				userId: existing.assigneeId as string,
+				ticketId: id,
+				type:
+					status === "RESOLVED"
+						? "TICKET_RESOLVED"
+						: status === "CLOSED"
+							? "TICKET_CLOSED"
+							: "TICKET_STATUS_UPDATED",
+				title: "Status tiket diperbarui",
+				body: `Tiket "${existing.title}" sekarang berstatus ${status}.`,
+			},
+		);
+	}
+
 	return c.json({ ticket });
 });
 
@@ -551,7 +602,7 @@ tickets.openapi(assignTicketRoute, async (c) => {
 		data: {
 			assigneeId,
 			techSupportId: techSupport.id,
-			status: TicketStatus.IN_PROGRESS,
+			status: TicketStatus.ASSIGNED,
 		},
 		include: {
 			assignee: { select: { id: true, fullName: true } },
@@ -573,7 +624,7 @@ tickets.openapi(assignTicketRoute, async (c) => {
 	// Notifikasi ke tech support baru
 	await insertNotifications(supabase,
 		{
-			userId: techSupportId,
+			userId: techSupportId as string,
 			ticketId: id,
 			type: "TICKET_ASSIGNED",
 			title: "Tiket baru di-assign ke kamu",

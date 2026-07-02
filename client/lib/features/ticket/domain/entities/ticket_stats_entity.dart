@@ -2,6 +2,7 @@
 class TicketStatsEntity {
   final int total;
   final int open;
+  final int assigned;
   final int inProgress;
   final int pending;
   final int resolved;
@@ -10,6 +11,7 @@ class TicketStatsEntity {
   const TicketStatsEntity({
     required this.total,
     required this.open,
+    required this.assigned,
     required this.inProgress,
     required this.pending,
     required this.resolved,

@@ -30,6 +30,7 @@ enum UserRole {
 
 enum TicketStatus {
   OPEN
+  ASSIGNED
   IN_PROGRESS
   PENDING
   RESOLVED

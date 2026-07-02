@@ -158,6 +158,7 @@ class TicketEntity {
     TicketCategoryRef? category,
     List<AttachmentSummary>? attachments,
     int? commentCount,
+    TicketTechSupportRef? techSupport,
   }) {
     return TicketEntity(
       id: id ?? this.id,
@@ -178,6 +179,7 @@ class TicketEntity {
       category: category ?? this.category,
       attachments: attachments ?? this.attachments,
       commentCount: commentCount ?? this.commentCount,
+      techSupport: techSupport ?? this.techSupport,
     );
   }
 
@@ -204,6 +206,16 @@ class TicketEntity {
           ? List<AttachmentSummary>.from(map['attachments']?.map((x) => AttachmentSummary.fromMap(x)))
           : const [],
       commentCount: map['commentCount'] ?? 0,
+      techSupport: map['techSupport'] != null
+          ? TicketTechSupportRef(
+              id: map['techSupport']['id'] ?? '',
+              speciality: map['techSupport']['speciality'] ?? '',
+              fullName: map['techSupport']['user']?['fullName'],
+              email: map['techSupport']['user']?['email'],
+              avatarUrl: map['techSupport']['user']?['avatarUrl'],
+              isActive: map['techSupport']['user']?['isActive'] as bool? ?? true,
+            )
+          : null,
     );
   }
 
