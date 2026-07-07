@@ -147,7 +147,7 @@ class DashboardScreen extends ConsumerWidget {
             _buildStatCard(context, 'Open', stats.open, AppColors.info, LucideIcons.folderOpen),
             _buildStatCard(context, 'Assigned', stats.assigned, Colors.indigo, LucideIcons.userCheck),
             _buildStatCard(context, 'In Progress', stats.inProgress, AppColors.warning, LucideIcons.loader),
-            _buildStatCard(context, 'Pending', stats.pending, AppColors.grey500, LucideIcons.clock),
+            // _buildStatCard(context, 'Pending', stats.pending, AppColors.grey500, LucideIcons.clock),
             _buildStatCard(context, 'Resolved', stats.resolved, AppColors.success, LucideIcons.circleCheck),
             _buildStatCard(context, 'Closed', stats.closed, AppColors.error, LucideIcons.circleX),
           ],

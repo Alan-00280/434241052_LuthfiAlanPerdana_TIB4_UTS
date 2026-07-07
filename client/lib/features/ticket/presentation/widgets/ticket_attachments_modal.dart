@@ -36,7 +36,7 @@ class TicketAttachmentsModalState extends ConsumerState<TicketAttachmentsModal> 
   }
 
   Future<void> _pickAndUpload() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'docx', 'md', 'json'],

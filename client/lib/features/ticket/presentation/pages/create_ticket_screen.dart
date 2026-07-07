@@ -29,7 +29,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
   bool _isLoading = false;
 
   Future<void> _pickFiles() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'docx', 'md', 'json'],

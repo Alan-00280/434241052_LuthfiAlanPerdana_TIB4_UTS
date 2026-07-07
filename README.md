@@ -29,13 +29,15 @@ Sistem manajemen tiket keluhan berbasis mobile yang menghubungkan pengguna denga
 - ✅ **Dashboard**: Statistik dan ringkasan tiket
 - ✅ **Riwayat**: Melihat daftar tiket yang pernah dibuat
 
-### Untuk Admin/Helpdesk
+### Untuk Admin/Helpdesk & Tech Support
+- ✅ **Manajemen Pengguna (Admin)**: Mengelola akun staff, role, dan menonaktifkan pengguna inaktif (soft delete).
 - ✅ **Manajemen Tiket**: Melihat semua tiket masuk
-- ✅ **Assign Tiket**: Menugaskan tiket ke support staff
-- ✅ **Update Status**: Mengubah status tiket (Open, In Progress, Resolved, Closed)
-- ✅ **Response**: Memberikan balasan/komentar pada tiket
-- ✅ **Dashboard**: Statistik dan analytics tiket
-- ✅ **Tracking**: Memantau penanganan setiap tiket
+- ✅ **Assign Tiket**: Menugaskan tiket ke support staff (Tech Support)
+- ✅ **Update Status**: Mengubah status tiket (Open, Assigned, In Progress, Pending, Resolved, Closed)
+- ✅ **Penanganan Tiket (Tech Support)**: Menerima tiket *Assigned* dan melakukan otomasi ke *In Progress*, hingga penyelesaian *Resolved*.
+- ✅ **Response**: Memberikan balasan/komentar pada tiket secara realtime (WebSocket Broadcast).
+- ✅ **Dashboard**: Statistik dan analytics tiket (6 Kartu Status).
+- ✅ **Tracking**: Memantau penanganan setiap tiket dengan notifikasi realtime (CDC).
 
 ---
 
@@ -96,12 +98,14 @@ Deployment: Docker / Kubernetes / Cloud Run
 - Melihat statistik tiket di dashboard
 - Mengakses riwayat lengkap tiket
 
-### 2. Admin/Helpdesk
-- Melihat dashboard dengan statistik tiket
+### 2. Admin/Helpdesk & Tech Support
+- Manajemen pengguna (Tambah staff, nonaktifkan akun inaktif dengan proteksi Guard UI)
+- Melihat dashboard dengan statistik tiket (6 Kartu Status)
 - Mengelola semua tiket yang masuk
-- Assign tiket ke staff yang tepat
-- Update status tiket (Open → In Progress → Resolved → Closed)
-- Memberikan response/feedback pada setiap tiket
+- Assign tiket ke staff (Tech Support) yang tepat dan aktif
+- Update status tiket (Open → Assigned → In Progress → Pending → Resolved → Closed)
+- Penanganan teknis (Otomasi In Progress & tombol khusus Done/Confirm)
+- Memberikan response/feedback pada setiap tiket (Real-time Broadcast)
 - Melihat tracking penanganan tiket
 - Generate laporan dan analytics
 
@@ -179,7 +183,7 @@ Deployment: Docker / Kubernetes / Cloud Run
      - Pilih staff yang tepat
      - Update assigned_to field di database
   3. **Update Status**:
-     - Change status: Open → In Progress → Resolved → Closed
+     - Change status: Open → Assigned → In Progress → Pending → Resolved → Closed
      - Add notes/reason untuk perubahan
   4. **Response/Reply**:
      - Berikan feedback kepada user
@@ -189,8 +193,8 @@ Deployment: Docker / Kubernetes / Cloud Run
 - **Deskripsi**: Sistem notifikasi push untuk update tiket
 - **Actor**: Semua tipe user
 - **Flow**:
-  1. Tiket status berubah → trigger FCM
-  2. Kirim push notification ke device user
+  1. Tiket status berubah atau komentar baru → trigger CDC (Supabase Realtime) / FCM
+  2. Kirim push notification & real-time event ke device user
   3. Tap notifikasi → navigate ke detail tiket
   4. Simpan notifikasi history di database
 
@@ -199,7 +203,7 @@ Deployment: Docker / Kubernetes / Cloud Run
 - **Actor**: Semua tipe user
 - **Metrics** (User):
   - Total tiket dibuat
-  - Status breakdown (Open, In Progress, Resolved, Closed)
+  - Status breakdown (Open, Assigned, In Progress, Pending, Resolved, Closed)
   - Rata-rata waktu resolusi
 - **Metrics** (Admin/Helpdesk):
   - Total tiket dalam sistem
@@ -221,7 +225,7 @@ Deployment: Docker / Kubernetes / Cloud Run
 - **Actor**: Semua tipe user
 - **Flow** (User):
   1. Buka detail tiket
-  2. Lihat timeline: Created → Assigned → In Progress → Resolved → Closed
+  2. Lihat timeline: Created → Assigned → In Progress → Pending → Resolved → Closed
   3. Waktu estimasi resolusi (jika ada SLA)
 - **Flow** (Admin/Helpdesk):
   1. Dashboard menampilkan tiket yang sedang ditangani
@@ -393,7 +397,7 @@ Deployment: Docker / Kubernetes / Cloud Run
 - Consistent color scheme
 - Toggle button di header/settings
 - Persistent preference (save ke local storage)
-- Apply ke semua screens -->
+- Apply ke semua screens
 
 ---
 
@@ -547,7 +551,7 @@ CREATE TABLE users (
   full_name VARCHAR(255) NOT NULL,
   phone_number VARCHAR(20),
   profile_picture_url TEXT,
-  role ENUM('user', 'helpdesk', 'admin') DEFAULT 'user',
+  role ENUM('user', 'helpdesk', 'techsupport', 'admin') DEFAULT 'user',
   is_active BOOLEAN DEFAULT true,
   last_login TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -567,7 +571,7 @@ CREATE TABLE tickets (
   priority ENUM('urgent', 'high', 'medium', 'low') DEFAULT 'medium',
   title VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
-  status ENUM('open', 'in_progress', 'resolved', 'closed') DEFAULT 'open',
+  status ENUM('open', 'assigned', 'in_progress', 'pending', 'resolved', 'closed') DEFAULT 'open',
   sla_deadline TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

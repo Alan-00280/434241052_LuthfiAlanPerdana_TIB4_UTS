@@ -88,7 +88,7 @@ class _TicketListScreenState extends ConsumerState<TicketListScreen> {
                         _buildStatusChip(ref, TicketStatus.open, 'Open', filter.status == TicketStatus.open),
                         _buildStatusChip(ref, TicketStatus.assigned, 'Assigned', filter.status == TicketStatus.assigned),
                         _buildStatusChip(ref, TicketStatus.inProgress, 'In Progress', filter.status == TicketStatus.inProgress),
-                        _buildStatusChip(ref, TicketStatus.pending, 'Pending', filter.status == TicketStatus.pending),
+                        // _buildStatusChip(ref, TicketStatus.pending, 'Pending', filter.status == TicketStatus.pending),
                         _buildStatusChip(ref, TicketStatus.resolved, 'Resolved', filter.status == TicketStatus.resolved),
                         _buildStatusChip(ref, TicketStatus.closed, 'Closed', filter.status == TicketStatus.closed),
                       ],
